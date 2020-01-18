@@ -1,0 +1,17 @@
+{
+    "require": {
+        "slim/slim": "^3.0",
+        "illuminate/database": "~5.1",
+        "tuupola/slim-jwt-auth": "^2.3",
+        "wixel/gump": "dev-master",
+        "automattic/woocommerce" : "2.0",
+        "twig/twig": "^2.6",
+        "endroid/qr-code": "2.5.1"
+    },
+    "autoload": {
+        "psr-4": {
+          "Controllers\\": "Controllers/",
+          "Models\\": "Models/"
+        }
+    }
+}
