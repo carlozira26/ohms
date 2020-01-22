@@ -143,6 +143,5 @@ class PatientsController{
 		$this->response['data'] = $doctorid;
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
-
 	}
 }

@@ -115,7 +115,7 @@ class MedicinesController{
 		$body = $request->getParsedBody();
 		$body = json_decode($body['patientMedicineList'],true);
 		$patientID = $args['id'];
-
+		$date = date('Y-m-d');
 		PatientMedicinesModel::where('uid',$patientID)->update(array('is_active'=>'N'));
 		foreach($body as $medicine){
 			PatientMedicinesModel::create(array(
@@ -123,6 +123,7 @@ class MedicinesController{
 				'medicineid' => $medicine['medicineID'],
 				'dosage' => $medicine['medicineDosage'],
 				'pieces' => $medicine['medicinePieces'],
+				'date_added' => $date
 			));
 		}
 		$this->response['status'] = true;
@@ -136,5 +137,68 @@ class MedicinesController{
 			->where('patient_medicine.is_active','Y')
 			->get();
 		return $this->container->response->withJson($patientMedicine);
+	}
+	public function getPatientMedicineSchedule($request, $response, $args){
+		$patientid = $args['id'];
+		$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine,pieces,date_added')
+			->join('medicines','patient_medicine.medicineid','=','medicines.id')
+			->where('patient_medicine.uid', $patientid)
+			->where('patient_medicine.is_active','Y')
+			->get();
+
+			$datacount = 0; 
+			foreach($MedicineList as $Medicine){
+				$timeIntake = TimeIntakeModel::select('intakedays','intaketime')
+					->where('is_active','Y')
+					->where('uid',$Medicine['id'])
+					->get();
+				$arrtime = array();
+				$arrdate = array();
+				foreach($timeIntake as $time){
+					array_push($arrtime,$time['intaketime']); 
+					array_push($arrdate,$time['intakedays']); 
+				}
+				$MedicineList[$datacount]['timeintake'] = $arrtime;
+				$MedicineList[$datacount]['dateintake'] = $arrdate;
+				$datacount++;
+			}
+			$datacount = 0;
+			foreach($MedicineList as $medicine){
+				$medList = $medicine['dateintake'];
+				$datearr = array();
+				$medicineDateArr = array();
+				foreach($medList as $weeks){
+					$weekname = explode(',',$weeks);
+					foreach($weekname as $week){
+						foreach($this->getDates($week,$medicine['date_added']) as $dates){
+							array_push($datearr,$dates);
+							array_push($medicineDateArr,$dates);
+						}
+					}
+					sort($medicineDateArr);
+				}
+				$perMedicineSchedule[$datacount]['medicinedatelist'] = $medicineDateArr;
+				$datacount++;
+				sort($datearr);
+			}
+			foreach($perMedicineSchedule as $key=>$med){
+				$MedicineList[$key]['datelist'] = $med;
+			}
+			$this->response['data'] = $MedicineList;
+			$this->response['dates'] = $datearr;
+		return $this->container->response->withJson($this->response);
+	}
+
+	private function getDates($weekname,$startdate){
+		$date = date('Y-m-d', strtotime('first '.$weekname.' of this month'));
+		$thisMonth = date("m", strtotime($date));
+		$arr = array();
+		while (date("m", strtotime($date)) === $thisMonth){
+			if($startdate <= date("Y-m-d", strtotime($date))){
+				array_push($arr, date("Y-m-d", strtotime($date)));
+			}
+			$date = date('Y-m-d', strtotime($date ." next ".$weekname));
+		}
+		return $arr;
 	}
 }

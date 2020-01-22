@@ -17,10 +17,18 @@ class UsersController{
 		$this->container = $container;
 	}
 
-	private function authenticateUsernamePassword($email="", $password=""){
+	private function authenticateEmailPassword($email="", $password=""){
 		$passwordConverter = $this->container['passwordConverter'];
 		$password = $passwordConverter($password);
 		return UsersModel::where('email',$email)
+		->where('password',$password)
+		->first();
+	}
+
+	private function authenticateUsernamePassword($username="", $password=""){
+		$passwordConverter = $this->container['passwordConverter'];
+		$password = $passwordConverter($password);
+		return PatientsModel::where('username',$username)
 		->where('password',$password)
 		->first();
 	}
@@ -34,8 +42,14 @@ class UsersController{
 	
 	public function UserAuth($request, $response, $args){
 		$body = $request->getParsedBody();
-		$departmentid = "";
-		$user = $this->authenticateUsernamePassword($body['email'], $body['password']);
+		$usertype = $body['usertype'];
+		if($usertype == 'doctor'){
+			$user = $this->authenticateEmailPassword($body['email'], $body['password']);
+			$role = $user->usertype;
+		}else{
+			$user = $this->authenticateUsernamePassword($body['username'], $body['password']);
+			$role = "none";
+		}
 		
 		$this->response['status'] = (!isset($user)) ? false : true;
 		$this->response['message'] = (!isset($user)) ? "Invalid Credential" : "";
@@ -49,7 +63,7 @@ class UsersController{
 			$this->response['data'] = array(
 				'id' => $user->id,
 				'fullname' => ucfirst(strtolower($fullname)),
-				'role' => $user->usertype,
+				'role' => $role,
 			);
 		}
 		return $this->container->response->withJson($this->response);
