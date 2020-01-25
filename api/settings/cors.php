@@ -2,6 +2,7 @@
 
 use \Slim\Middleware\JwtAuthentication;
 use Models\UsersModel;
+use Controllers\Utils;
 
 $container = $app->getContainer();
 $app->add(new JwtAuthentication([
@@ -12,6 +13,10 @@ $app->add(new JwtAuthentication([
     "header" => "Authorization",
     "regexp" => "/Bearer\s+(.*)$/i",
     "passthrough" => ['/users/login'],
+    "callback" => function($request, $response, $params) use ($container){
+    	$Utils = new Utils();
+    	$user = $Utils->getUserFromBearerToken($request,$container);
+    },
     "secret" => $container['settings']['jwt']
 ]));
 

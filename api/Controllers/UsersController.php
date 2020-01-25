@@ -22,6 +22,7 @@ class UsersController{
 		$password = $passwordConverter($password);
 		return UsersModel::where('email',$email)
 		->where('password',$password)
+		->where('is_active','Y')
 		->first();
 	}
 
@@ -116,9 +117,109 @@ class UsersController{
 		return $this->container->response->withJson($password);
 	}
 	public function DoctorsList($req, $res, $args){
-		$list = UsersModel::selectRaw('id,concat("Dr. ",firstname," ",lastname) as doctor')
-			->where('usertype',2)->get();
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($req, $this->container);
 
+		$list = UsersModel::selectRaw('id,concat("Dr. ",firstname," ",lastname) as doctor')
+			->where('is_active','Y')
+			->where('usertype',2)
+			->where('id','!=',$user['id'])
+			->get();
 		return $this->container->response->withJson($list);
+	}
+
+	public function DoctorsListAccount($req, $res, $args){
+		$body = $req->getQueryParams();
+
+		$limit = 20;
+		$offset = ($_GET['page'] - 1) * $limit;
+		$doctorList = UsersModel::selectRaw('firstname, middlename, lastname,birthdate, gender, contact_number, licensenumber, specialization, clinic_name, clinic_address, email, is_active')
+			->where('usertype',2);
+
+		$doctorCount = UsersModel::selectRaw("count(id) as count");
+
+		if(!empty($_GET['search'])){
+			$doctorList = $doctorList
+				->whereRaw('(firstname LIKE "%'.$_GET['search'].'%" or
+				middlename LIKE "%'.$_GET['search'].'%" or
+				lastname LIKE "%'.$_GET['search'].'%" or
+				gender LIKE "%'.$_GET['search'].'%" or
+				specialization LIKE "%'.$_GET['search'].'%" or
+				clinic_name LIKE "%'.$_GET['search'].'%" or
+				clinic_address LIKE "%'.$_GET['search'].'%" or
+				email LIKE "%'.$_GET['search'].'%")');
+			$doctorCount = $doctorCount
+				->whereRaw('(firstname LIKE "%'.$_GET['search'].'%" or
+				middlename LIKE "%'.$_GET['search'].'%" or
+				lastname LIKE "%'.$_GET['search'].'%" or
+				gender LIKE "%'.$_GET['search'].'%" or
+				specialization LIKE "%'.$_GET['search'].'%" or
+				clinic_name LIKE "%'.$_GET['search'].'%" or
+				clinic_address LIKE "%'.$_GET['search'].'%" or
+				email LIKE "%'.$_GET['search'].'%")');
+		}else{
+			$doctorList = $doctorList
+			->where('is_active','Y')
+			->offset($offset)
+			->limit($limit);
+		}
+		$doctorList = $doctorList
+			->get();
+		$doctorCount = $doctorCount->first();
+
+		$this->response['count'] = $doctorCount;
+		$this->response['data'] = $doctorList;
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
+	public function CreateAccount($req, $res, $args){
+		$body = $req->getParsedBody();
+		$passwordConvert = $this->container['passwordConverter'];
+		$generateChars = $this->container['generateRandomChars'];
+		$token = $generateChars(22);
+
+		$firstname = $body['firstname'];
+		$middlename = $body['middlename'];
+		$lastname = $body['lastname'];
+		$birthdate = $body['birthdate'];
+		$license = ($body['license']!="undefined" && isset($body['license'])) ? $body['license'] : "";
+		$specialization = ($body['specialization']!="undefined" && isset($body['specialization'])) ? $body['specialization'] : "";
+		$gender = $body['gender'];
+		$email = $body['email'];
+		$contactnumber = $body['contactnumber'];
+		$clinicname = ($body['clinicname']!="undefined" && isset($body['clinicname'])) ? $body['clinicname'] : "";
+		$clinicaddress = ($body['clinicaddress']!="undefined" && isset($body['clinicaddress'])) ? $body['clinicaddress'] : "";
+		$password = $body['password'];
+		$isadmin = ($body['isadmin']=="true") ? 1 : 2;
+		$form = array(
+			'firstname' => $firstname,
+			'middlename' => $middlename,
+			'lastname' => $lastname,
+			'birthdate' => $birthdate,
+			'gender' => $gender,
+			'contact_number' => $contactnumber,
+			'licensenumber' => $license,
+			'specialization' => $specialization,
+			'clinic_name' => $clinicname,
+			'clinic_address' => $clinicaddress,
+			'email' => $email,
+			'password' => $passwordConvert($password),
+			'usertype' => '2',
+			'token' => $token,
+			'usertype' => $isadmin
+		);
+		$user = UsersModel::select("email")
+			->where('email',$email)
+			->first();
+		if($user){
+			$this->response['message'] = "Username already used!";
+			$this->response['status'] = false;
+		}else{
+			UsersModel::create($form);
+			$this->response['status'] = true;
+			$this->response['message'] = "Successfully Created";
+		}
+		
+		return $this->container->response->withJson($this->response);
 	}
 }

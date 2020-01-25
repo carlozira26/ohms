@@ -115,7 +115,7 @@ class MedicinesController{
 		$body = $request->getParsedBody();
 		$body = json_decode($body['patientMedicineList'],true);
 		$patientID = $args['id'];
-		$date = date('Y-m-d');
+
 		PatientMedicinesModel::where('uid',$patientID)->update(array('is_active'=>'N'));
 		foreach($body as $medicine){
 			PatientMedicinesModel::create(array(
@@ -123,7 +123,7 @@ class MedicinesController{
 				'medicineid' => $medicine['medicineID'],
 				'dosage' => $medicine['medicineDosage'],
 				'pieces' => $medicine['medicinePieces'],
-				'date_added' => $date
+				'date_added' => date('Y-m-d')
 			));
 		}
 		$this->response['status'] = true;

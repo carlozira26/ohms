@@ -2,6 +2,7 @@
 namespace Controllers;
 use Models\PatientsModel;
 use Models\UsersModel;
+use Models\PatientLogsModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -42,7 +43,6 @@ class PatientsController{
 					"consultationdate" => $body['consultationdate'],
 					"gender" => $body['gender'],
 					"mobilenumber" => $body['mobilenumber'],
-					"status" => $body['status'],
 					"drtb" => $body['drtb'],
 					"address" => ucwords(strtolower($body['address'])),
 					"remarks" => $body['remarks'],
@@ -68,7 +68,6 @@ class PatientsController{
 					"consultationdate" => $body['consultationdate'],
 					"gender" => $body['gender'],
 					"mobilenumber" => $body['mobilenumber'],
-					"status" => $body['status'],
 					"drtb" => $body['drtb'],
 					"address" => $body['address'],
 					"remarks" => $body['remarks'],
@@ -83,30 +82,37 @@ class PatientsController{
 	}
 	public function patientList($requests, $response, $args) {
 		$body = $requests->getQueryParams();
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($requests, $this->container);
 
 		$limit = 20;
 		$offset = ($_GET['page'] - 1) * $limit;
 		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","remarks");
 
 		$patientCount = PatientsModel::selectRaw("count(id) as count");
-
+		if($user['usertype'] == 2){
+			$patientList = $patientList
+				->where('doctor_id',$user['id']);
+			$patientCount = $patientCount
+				->where('doctor_id',$user['id']);
+		}
 		if(!empty($_GET['search'])){
 			$patientList = $patientList
-				->where('patient_id', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('firstname', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('middlename', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('lastname', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('status', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('address', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('remarks', 'LIKE', "%".$_GET['search']."%" );
+				->whereRaw('(patient_id LIKE "%'.$_GET['search'].'%" or
+				firstname LIKE "%'.$_GET['search'].'%" or
+				middlename LIKE "%'.$_GET['search'].'%" or
+				lastname LIKE "%'.$_GET['search'].'%" or
+				status LIKE "%'.$_GET['search'].'%" or
+				address LIKE "%'.$_GET['search'].'%" or
+				remarks LIKE "%'.$_GET['search'].'%")');
 			$patientCount = $patientCount
-				->where('patient_id', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('firstname', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('middlename', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('lastname', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('status', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('address', 'LIKE', "%".$_GET['search']."%" )
-				->orWhere('remarks', 'LIKE', "%".$_GET['search']."%" );
+				->whereRaw('(patient_id LIKE "%'.$_GET['search'].'%" or
+				firstname LIKE "%'.$_GET['search'].'%" or
+				middlename LIKE "%'.$_GET['search'].'%" or
+				lastname LIKE "%'.$_GET['search'].'%" or
+				status LIKE "%'.$_GET['search'].'%" or
+				address LIKE "%'.$_GET['search'].'%" or
+				remarks LIKE "%'.$_GET['search'].'%")');
 			
 		}else{
 			$patientList = $patientList
@@ -116,7 +122,7 @@ class PatientsController{
 		$patientList = $patientList
 			->limit($limit)
 			->get();
-		$patientCount= $patientCount->first();
+		$patientCount = $patientCount->first();
 
 		$this->response['count'] = $patientCount;
 		$this->response['data'] = $patientList;
@@ -143,5 +149,24 @@ class PatientsController{
 		$this->response['data'] = $doctorid;
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
+	}
+	public function changePatientStatus($req, $res, $args){
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($req, $this->container);
+		
+		$body = $req->getParsedBody();
+		$id = $args['id'];
+
+		$reason = (isset($body['reason'])) ? $body['reason'] : ""; 
+		PatientsModel::where('id',$id)->update(array('status' => $body['status']));
+		PatientLogsModel::create(array(
+			'uid' => $id,
+			'status' => $body['status'],
+			'reason' => $reason,
+			'updated_by' => $user['lastname'].", ".$user['firstname']
+		));
+		$this->response['message'] = "Successfully Changed!";
+		$this->response['status'] = true;
+		return $this->container->response->withJson($user);
 	}
 }

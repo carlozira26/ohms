@@ -5,7 +5,7 @@ return array(
         "determineRouteBeforeAppMiddleware" => true,
         "displayErrorDetails" => true, // set to false in production
         "addContentLengthHeader" => false,
-        "jwt" => "Pr0j3ct-04m$", //getenv("JWT_SECRET")
+        "jwt" => "Pr0j3ct0hms", //getenv("JWT_SECRET")
         "jwtalgo" => array("HS256"), //getenv("JWT_SECRET")
         "db" => array(
             "driver" => "mysql",
