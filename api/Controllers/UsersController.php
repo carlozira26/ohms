@@ -133,7 +133,7 @@ class UsersController{
 
 		$limit = 20;
 		$offset = ($_GET['page'] - 1) * $limit;
-		$doctorList = UsersModel::selectRaw('firstname, middlename, lastname,birthdate, gender, contact_number, licensenumber, specialization, clinic_name, clinic_address, email, is_active')
+		$doctorList = UsersModel::selectRaw('id, firstname, middlename, lastname,birthdate, gender, contact_number, licensenumber, specialization, clinic_name, clinic_address, email, is_active')
 			->where('usertype',2);
 
 		$doctorCount = UsersModel::selectRaw("count(id) as count");
@@ -220,6 +220,21 @@ class UsersController{
 			$this->response['message'] = "Successfully Created";
 		}
 		
+		return $this->container->response->withJson($this->response);
+	}
+	public function AccountActivate($req, $res, $args){
+		$body = $req->getParsedBody();
+		$id = $args['id'];
+		if($body['type'] == "deactivate"){
+			UsersModel::where('id',$id)
+				->update(array('is_active'=>'N'));
+			$this->response["message"] = "Account has been deactivated!";
+		}else{
+			UsersModel::where('id',$id)
+				->update(array('is_active'=>'N'));
+			$this->response["message"] = "Account has been reactivated!";
+		}
+			$this->response["status"] = true;
 		return $this->container->response->withJson($this->response);
 	}
 }

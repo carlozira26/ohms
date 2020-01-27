@@ -213,14 +213,24 @@ class MedicinesController{
 	}
 
 	private function getDates($weekname,$startdate){
-		$date = date('Y-m-d', strtotime('first '.$weekname.' of this month'));
-		$thisMonth = date("m", strtotime($date));
-		$arr = array();
-		while (date("m", strtotime($date)) === $thisMonth){
-			if($startdate <= date("Y-m-d", strtotime($date))){
-				array_push($arr, date("Y-m-d", strtotime($date)));
+		if($weekname == "Daily"){
+			$date = date('Y-m-d', strtotime($startdate));
+			$thisMonth = date("m",strtotime($date));
+			$arr = array();
+			while(date("m", strtotime($date)) === $thisMonth){
+				array_push($arr, $date);
+				$date = date('Y-m-d',strtotime($date." +1 days"));
 			}
-			$date = date('Y-m-d', strtotime($date ." next ".$weekname));
+		}else{
+			$date = date('Y-m-d', strtotime('first '.$weekname.' of this month'));
+			$thisMonth = date("m", strtotime($date));
+			$arr = array();
+			while (date("m", strtotime($date)) === $thisMonth){
+				if($startdate <= date("Y-m-d", strtotime($date))){
+					array_push($arr, date("Y-m-d", strtotime($date)));
+				}
+				$date = date('Y-m-d', strtotime($date ." next ".$weekname));
+			}
 		}
 		return $arr;
 	}
