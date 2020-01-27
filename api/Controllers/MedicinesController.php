@@ -22,14 +22,14 @@ class MedicinesController{
 		$body = $request->getParsedBody();
 		$timeIntakeList = json_decode($body["timeIntake"],true);
 		$type = $args['type'];
-
-		if($type == "add"){
+		if($type == "new"){
 			$medicineSave = MedicinesModel::create(array(
 				"brandname" => $body['brandName'],
 				"genericname" => $body['genericName'],
 				"instructions" => $body['instructions']
 			));
 			$id = $medicineSave->id;
+			
 			$this->response["message"] = "Successfully added!";
 			$this->response["status"] = true;
 		}else{
@@ -115,17 +115,40 @@ class MedicinesController{
 		$body = $request->getParsedBody();
 		$body = json_decode($body['patientMedicineList'],true);
 		$patientID = $args['id'];
+		$medList = array();
+		$date = date('Y-m-d');
 
-		PatientMedicinesModel::where('uid',$patientID)->update(array('is_active'=>'N'));
-		foreach($body as $medicine){
-			PatientMedicinesModel::create(array(
-				'uid' => $patientID,
-				'medicineid' => $medicine['medicineID'],
-				'dosage' => $medicine['medicineDosage'],
-				'pieces' => $medicine['medicinePieces'],
-				'date_added' => date('Y-m-d')
-			));
+		foreach($body as $newMedicine){
+			$selectID = PatientMedicinesModel::where('uid',$patientID)
+				->where('medicineid',$newMedicine['medicineID'])
+				->where('is_active','Y')
+				->first();
+			if($selectID){
+				array_push($medList, $selectID['id']);
+				PatientMedicinesModel::where('uid',$patientID)
+				->where('medicineid', $selectID['id'])
+				->update(array(
+					'medicineid' => $newMedicine['medicineID'],
+					'dosage' => $newMedicine['medicineDosage'],
+					'pieces' => $newMedicine['medicinePieces']
+				));
+			}else{
+				$newMedID = PatientMedicinesModel::create(array(
+					'uid' => $patientID,
+					'medicineid' => $newMedicine['medicineID'],
+					'dosage' => $newMedicine['medicineDosage'],
+					'pieces' => $newMedicine['medicinePieces'],
+					'date_added' => $date
+				));
+				array_push($medList, $newMedID->id);
+			}
 		}
+		$newMed = PatientMedicinesModel::where('uid',$patientID)
+			->where('is_active','Y')
+			->whereNotIn('id',$medList)
+			->update(array('is_active'=>'N'));
+
+		$this->response["message"] = "Successfully Added!";
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
