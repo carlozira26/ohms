@@ -8,4 +8,7 @@
 	$container['MedicinesController'] = function($container){
 		return new \Controllers\MedicinesController($container);
 	};
+	$container['ChatController'] = function($container){
+		return new \Controllers\ChatController($container);
+	};
 ?>
