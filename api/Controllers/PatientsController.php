@@ -3,6 +3,7 @@ namespace Controllers;
 use Models\PatientsModel;
 use Models\UsersModel;
 use Models\PatientLogsModel;
+use Models\DiagnosticLogsModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -84,12 +85,26 @@ class PatientsController{
 		$body = $requests->getQueryParams();
 		$Utils = new Utils();
 		$user = $Utils->getUserFromBearerToken($requests, $this->container);
-
+		
+		$sort = $_GET['sort'];
+		$status = $_GET['status'];
 		$limit = 20;
 		$offset = ($_GET['page'] - 1) * $limit;
 		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","remarks");
 
 		$patientCount = PatientsModel::selectRaw("count(id) as count");
+		if(!empty($status)){
+			$patientList = $patientList
+			->where('status',$status);
+			
+			$patientCount = $patientCount
+			->where('status',$status);
+		}
+
+		if(!empty($sort)){
+			$patientList = $patientList
+			->orderBy('lastname', $sort);
+		}
 		if($user['usertype'] == 2){
 			$patientList = $patientList
 				->where('doctor_id',$user['id']);
@@ -101,24 +116,19 @@ class PatientsController{
 				->whereRaw('(patient_id LIKE "%'.$_GET['search'].'%" or
 				firstname LIKE "%'.$_GET['search'].'%" or
 				middlename LIKE "%'.$_GET['search'].'%" or
-				lastname LIKE "%'.$_GET['search'].'%" or
-				status LIKE "%'.$_GET['search'].'%" or
-				address LIKE "%'.$_GET['search'].'%" or
-				remarks LIKE "%'.$_GET['search'].'%")');
+				lastname LIKE "%'.$_GET['search'].'%")');
 			$patientCount = $patientCount
 				->whereRaw('(patient_id LIKE "%'.$_GET['search'].'%" or
 				firstname LIKE "%'.$_GET['search'].'%" or
 				middlename LIKE "%'.$_GET['search'].'%" or
-				lastname LIKE "%'.$_GET['search'].'%" or
-				status LIKE "%'.$_GET['search'].'%" or
-				address LIKE "%'.$_GET['search'].'%" or
-				remarks LIKE "%'.$_GET['search'].'%")');
+				lastname LIKE "%'.$_GET['search'].'%")');
 			
 		}else{
 			$patientList = $patientList
 			->offset($offset)
 			->limit($limit);
 		}
+
 		$patientList = $patientList
 			->limit($limit)
 			->get();
@@ -167,6 +177,70 @@ class PatientsController{
 		));
 		$this->response['message'] = "Successfully Changed!";
 		$this->response['status'] = true;
-		return $this->container->response->withJson($user);
+		return $this->container->response->withJson($this->response);
+	}
+	public function fetchDiagnosticResults($req, $res, $args){
+		$id = $_GET['patientid'];
+		$limit = 8;
+		$offset = ($_GET['page'] - 1) * $limit;
+		$patientDiagnostic = DiagnosticLogsModel::where( 'patient_id',$id )
+			->orderBy('created_at','asc')
+			->offset($offset)
+			->limit($limit)
+			->get();
+		$diagnosticCount = DiagnosticLogsModel::selectRaw("count(id) as count")->where( 'patient_id',$id )->first();
+		$this->response['count'] = $diagnosticCount;
+		$this->response['data'] = $patientDiagnostic;
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
+	public function uploadResult($req, $res, $args){
+		$body = $req->getParsedBody();
+		$patient = PatientsModel::select("patient_id")->where('id',$body['patientid'])->first();
+		$diagnostic = explode(" ",$body['diagnostictype']);
+		
+		$file = null;
+		if(isset($_FILES['imageFile'])){
+			$file = $_FILES['imageFile'];
+			$imgUploadResponse = $this->uploadImage($file, $diagnostic[0] ,$patient['patient_id']);
+		}
+
+		$imgpath = null;
+		if(isset($imgUploadResponse['imageLocation'])){
+			$imgpath = $imgUploadResponse['imageLocation'];
+		}
+		DiagnosticLogsModel::create(array(
+			'patient_id' => $body['patientid'],
+			'diagnostic_type' => $body['diagnostic'],
+			'result' => $body['result'],
+			'image_location' => $imgpath	
+		));
+		$this->response['message'] = "Diagnostic result has been uploaded!";
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
+
+	public function uploadImage($file, $diagnostictype, $patientid){
+		$uploadOk = 1;
+		$date = date("Y-m-d");
+		if(!isset($file['name'])){
+			$error['status']="error";
+			$error['msg']="Encountered an error while uploading the image.";
+			echo json_encode($error);
+		}else{
+			$uploadDirectory = $this->container["settings"]["uploadDirectory"];
+			if($file['error']==0){
+				$fileType = explode("/",$file['type']);
+				if(move_uploaded_file($file['tmp_name'], $uploadDirectory."/".$diagnostictype."/".$patientid." (".$date.").".$fileType[1])==true){
+					$error['status']="success";
+					$error['msg']="The image has been uploaded.";
+					$error['imageLocation'] = "/uploads/".$diagnostictype."/".$patientid." (".$date.").".$fileType[1];
+				}else{
+					$error['status']="error";
+					$error['msg']="Sorry, there was an error uploading the image.";
+				}
+			}
+			return $error;
+		}
 	}
 }
