@@ -231,7 +231,7 @@ class UsersController{
 			$this->response["message"] = "Account has been deactivated!";
 		}else{
 			UsersModel::where('id',$id)
-				->update(array('is_active'=>'N'));
+				->update(array('is_active'=>'Y'));
 			$this->response["message"] = "Account has been reactivated!";
 		}
 			$this->response["status"] = true;
