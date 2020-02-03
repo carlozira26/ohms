@@ -67,10 +67,11 @@
 
                                 <v-list-tile-content>
                                     <v-list-tile-title>Admin</v-list-tile-title>
-                                    <v-list-tile-sub-title>Patient</v-list-tile-sub-title>
+                                    <v-list-tile-sub-title class="orange--text">Ongoing Treatment</v-list-tile-sub-title>
                                 </v-list-tile-content>
                             </v-list-tile>
                         </v-list>
+                        <v-divider></v-divider>
                         <v-list>
                             <v-list-tile>
                                 <v-list-tile>

@@ -55,20 +55,36 @@
 							</v-flex>
               <v-flex offset-md4 md4>
                 <template>
-  <v-expansion-panel>
-    <v-expansion-panel-content
-      v-for="(item,i) in 5"
-      :key="i"
-    >
-      <template v-slot:header>
-        <div>Item</div>
-      </template>
-      <v-card>
-        <v-card-text>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</v-card-text>
-      </v-card>
-    </v-expansion-panel-content>
-  </v-expansion-panel>
-</template>
+                  <v-card>
+                    <v-card-title class="green darken-4 white--text title">
+                      Diagnosis Results
+                    </v-card-title>
+                  </v-card>
+                  <v-expansion-panel>
+                    <v-expansion-panel-content v-for="(item,i) in diagnosis" :key="i">
+                      <template v-slot:header>
+                        <div class="green--text">{{ item }}</div>
+                      </template>
+                      <v-divider></v-divider>
+                      <v-card>
+                        <v-card-text style="overflow:auto;max-height:100px">
+                          <table class="table">
+                            <tr>
+                              <td>
+                                <a>200001(2020-01-31).png</a>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>
+                                <a>200001(2020-01-31).png</a>
+                              </td>
+                            </tr>
+                          </table>
+                        </v-card-text>
+                      </v-card>
+                    </v-expansion-panel-content>
+                  </v-expansion-panel>
+                </template>
               </v-flex>
 						</v-layout>
 					</v-card-text>
@@ -80,6 +96,7 @@
 <script>
   export default {
     data: () => ({
+      diagnosis : ["Sputum Result", "CXR Result", "TST Result", "Other Examination Result"],
       today: '2019-01-08',
       events: [
         {
@@ -162,4 +179,13 @@
     cursor: pointer;
     margin-bottom: 1px;
   }
+  .table {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .table td{border: 1px solid #ddd;padding: 8px;}
+  .table tr:nth-child(even){background-color: #f2f2f2;}
+  .table tr:hover {background-color: #ddd;}
+
 </style>

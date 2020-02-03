@@ -163,7 +163,7 @@ class MedicinesController{
 	}
 	public function getPatientMedicineSchedule($request, $response, $args){
 		$patientid = $args['id'];
-		$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine,pieces,date_added')
+		$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine, pieces, date_added')
 			->join('medicines','patient_medicine.medicineid','=','medicines.id')
 			->where('patient_medicine.uid', $patientid)
 			->where('patient_medicine.is_active','Y')
@@ -186,6 +186,7 @@ class MedicinesController{
 				$datacount++;
 			}
 			$datacount = 0;
+
 			foreach($MedicineList as $medicine){
 				$medList = $medicine['dateintake'];
 				$datearr = array();
