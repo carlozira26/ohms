@@ -229,12 +229,13 @@ class PatientsController{
 			echo json_encode($error);
 		}else{
 			$uploadDirectory = $this->container["settings"]["uploadDirectory"];
+			$baseUrl = $this->container["settings"]["baseUrl"];
 			if($file['error']==0){
 				$fileType = explode("/",$file['type']);
-				if(move_uploaded_file($file['tmp_name'], $uploadDirectory."/".$diagnostictype."/".$patientid." (".$date.").".$fileType[1])==true){
+				if(move_uploaded_file($file['tmp_name'], $uploadDirectory."/".$diagnostictype."/".$patientid."(".$date.").".$fileType[1])==true){
 					$error['status']="success";
 					$error['msg']="The image has been uploaded.";
-					$error['imageLocation'] = "/uploads/".$diagnostictype."/".$patientid." (".$date.").".$fileType[1];
+					$error['imageLocation'] = $baseUrl."/uploads/".$diagnostictype."/".$patientid."(".$date.").".$fileType[1];
 				}else{
 					$error['status']="error";
 					$error['msg']="Sorry, there was an error uploading the image.";
