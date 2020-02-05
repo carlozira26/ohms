@@ -163,75 +163,79 @@ class MedicinesController{
 	}
 	public function getPatientMedicineSchedule($request, $response, $args){
 		$patientid = $args['id'];
-		$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine, pieces, date_added')
+		$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine,pieces,date_added')
 			->join('medicines','patient_medicine.medicineid','=','medicines.id')
 			->where('patient_medicine.uid', $patientid)
 			->where('patient_medicine.is_active','Y')
 			->get();
-
-			$datacount = 0; 
+			$schedule = array();
+			$datelist = array();
 			foreach($MedicineList as $Medicine){
 				$timeIntake = TimeIntakeModel::select('intakedays','intaketime')
 					->where('is_active','Y')
-					->where('uid',$Medicine['id'])
+					->where('uid', $Medicine['id'])
 					->get();
-				$arrtime = array();
-				$arrdate = array();
-				foreach($timeIntake as $time){
-					array_push($arrtime,$time['intaketime']); 
-					array_push($arrdate,$time['intakedays']); 
-				}
-				$MedicineList[$datacount]['timeintake'] = $arrtime;
-				$MedicineList[$datacount]['dateintake'] = $arrdate;
-				$datacount++;
-			}
-			$datacount = 0;
 
-			foreach($MedicineList as $medicine){
-				$medList = $medicine['dateintake'];
-				$datearr = array();
-				$medicineDateArr = array();
-				foreach($medList as $weeks){
-					$weekname = explode(',',$weeks);
-					foreach($weekname as $week){
-						foreach($this->getDates($week,$medicine['date_added']) as $dates){
-							array_push($datearr,$dates);
-							array_push($medicineDateArr,$dates);
-						}
+				$dates = $this->processMedicineTimeSchedule($Medicine['pieces'],$timeIntake[0]['intaketime'],$timeIntake[0]['intakedays'],$Medicine['date_added']);
+				$intaketime = explode(',',$timeIntake[0]['intaketime']);
+				foreach($dates as $date){
+					if(!in_array($date,$datelist)){
+						array_push($datelist,$date);
 					}
-					sort($medicineDateArr);
+					foreach($intaketime as $time){
+						$schedule[$date][$time][] = $Medicine['medicine'];
+					}
 				}
-				$perMedicineSchedule[$datacount]['medicinedatelist'] = $medicineDateArr;
-				$datacount++;
-				sort($datearr);
 			}
-			foreach($perMedicineSchedule as $key=>$med){
-				$MedicineList[$key]['datelist'] = $med;
-			}
-			$this->response['data'] = $MedicineList;
-			$this->response['dates'] = $datearr;
+			ksort($schedule);
+			// $resort = array();
+			// foreach($schedule as $key=>$value){
+			// 	$resort[] = array(
+			// 		"date" => $key,
+			// 		"time" => $value
+			// 	);
+			// }
+			$this->response['data'] = $schedule;
+			$this->response['dates'] = $datelist;
+			$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
-
-	private function getDates($weekname,$startdate){
-		if($weekname == "Daily"){
+	private function processMedicineTimeSchedule($pieces,$timelist,$days,$date_added){
+		$timelist = explode(',',$timelist);
+		$totaldays = $pieces / count($timelist);
+		$totaldays = (!is_int($totaldays)) ? round($totaldays) : $totaldays;
+		
+		return $this->getDates($days, $date_added, $totaldays);
+	}
+	private function getDates($weekdays,$startdate,$totaldays){
+		if($weekdays == "Daily"){
 			$date = date('Y-m-d', strtotime($startdate));
 			$thisMonth = date("m",strtotime($date));
 			$arr = array();
-			while(date("m", strtotime($date)) === $thisMonth){
+			$zerostart = 0;
+			while($zerostart < $totaldays){
 				array_push($arr, $date);
 				$date = date('Y-m-d',strtotime($date." +1 days"));
+				$zerostart++;
 			}
 		}else{
-			$date = date('Y-m-d', strtotime('first '.$weekname.' of this month'));
-			$thisMonth = date("m", strtotime($date));
+			$explweek = explode(",",$weekdays);
+			$averagedays = round($totaldays / count($explweek));
 			$arr = array();
-			while (date("m", strtotime($date)) === $thisMonth){
-				if($startdate <= date("Y-m-d", strtotime($date))){
-					array_push($arr, date("Y-m-d", strtotime($date)));
+			$zerostart = 0;
+			foreach($explweek as $day){
+				$date = date('Y-m-d', strtotime($startdate.' first '.$day.' of this month'));
+				$zerostart = 0;
+				while($zerostart < $averagedays){
+					if(date("Y-m-d", strtotime($date)) > $startdate){
+						array_push($arr, date("Y-m-d", strtotime($date)));
+						$zerostart++;						
+					}
+					$date = date('Y-m-d', strtotime($date ." next ".$day));
 				}
-				$date = date('Y-m-d', strtotime($date ." next ".$weekname));
 			}
+			$arr = (count($arr) > $totaldays) ? array_slice($arr,0,$totaldays) : $arr;
+			sort($arr);
 		}
 		return $arr;
 	}

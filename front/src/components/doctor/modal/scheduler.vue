@@ -25,8 +25,11 @@
 							<div class="text-xs-center" v-if="prescribedMedicine == 0">
 								<h4 class="red--text">No Medicine Found</h4>
 							</div>
-							<ul v-else v-for="(medicine,index) in prescribedMedicine" :key="index">
-								<li>{{medicine}}</li>
+							<ul v-else v-for="(timeintake,index) in prescribedMedicine" :key="index">
+								<li class="font-weight-bold">{{timeintake.time}}</li>
+								<ul v-for="(medicine,index) in timeintake.medicine" :key="index">
+									<li class="font-italic">{{ medicine }}</li>
+								</ul>
 							</ul>
 						</div>
 					</v-flex>
@@ -58,7 +61,7 @@ import axios from 'axios';
 				medscheduler : false,
 				date: new Date().toISOString().substr(0, 10),
 
-				medicineList: [],
+				medicineSchedule: [],
 				prescribedMedicine : [],
 			}
 		},
@@ -74,18 +77,22 @@ import axios from 'axios';
 				.get('/medicine/patient/schedule/'+id)
 				.then(function(res){
 					_this.arrayEvents = res.data.dates;
-					_this.medicineList = res.data.data;
+					_this.medicineSchedule = res.data.data;
 					_this.checkMedicineDate();
 				});
 			},
 			checkMedicineDate : function(){
 				this.prescribedMedicine = [];
-				for(let medicineIndex in this.medicineList){
-					this.datesList = this.medicineList[medicineIndex].datelist.medicinedatelist.join();
-					if(this.datesList.indexOf(this.date) > -1){
-						this.prescribedMedicine.push(this.medicineList[medicineIndex].medicine);
-					}
-				}
+				const schedule = [];
+				let _this = this;
+				let x = 0;
+				Object.keys(_this.medicineSchedule[_this.date]).sort().forEach(function(key) {
+					_this.prescribedMedicine[x] ={
+						time : key,
+						medicine : _this.medicineSchedule[_this.date][key],
+					};
+					x++;
+				});
 			}
 		}
 	};
