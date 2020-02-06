@@ -41,6 +41,7 @@
 										</v-btn>
 									</th>
 									<th class="font-weight-bold text-xs-center" style="width:10%;">STATUS</th>
+									<th class="font-weight-bold text-xs-center" style="width:10%;">TB CATEGORY</th>
 									<th class="font-weight-bold text-xs-center" style="width:10%;">REMARKS</th>
 									<th class="font-weight-bold text-xs-center" style="width:10%;">ACTIONS</th>
 								</tr>
@@ -56,6 +57,7 @@
 										<td>{{ patient.patient_id }}</td>
 										<td>{{ patient.lastname + ", " + patient.firstname }}</td>
 										<td  class="pt-2"><v-select flat box label="Status" :items="status" v-model="patient.status" @change="changeStatus(index)" solo></v-select></td>
+										<td>{{ patient.category }}</td>
 										<td>{{ patient.remarks }}</td>
 										<td>
 											<template>
@@ -120,7 +122,6 @@
 														</v-list-tile-avatar>
 														<v-list-tile-title>Archive</v-list-tile-title>
 													</v-list-tile>
-
 												</v-list>
 											</v-menu>
 										</template>
@@ -421,6 +422,7 @@
 				})
 				.get('/patients/list?page='+_this.pagination.page+'&search='+_this.search+'&sort='+_this.sortType+"&status="+_this.statusFilter)
 				.then(function(res){
+					console.log(res.data.data);
 					_this.patientList = res.data.data;
 					_this.headCount = res.data.count.count;
 					_this.pagination.length = Math.ceil(res.data.count.count / 20);
