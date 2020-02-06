@@ -244,4 +244,8 @@ class PatientsController{
 			return $error;
 		}
 	}
+
+	public function fetchPatientFile($req, $res, $args){
+		
+	}
 }

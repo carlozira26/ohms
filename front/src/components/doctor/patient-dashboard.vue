@@ -9,7 +9,7 @@
 					<v-divider></v-divider>
 					<v-card-text>
 						<v-layout row wrap>
-							<v-flex md4>
+							<v-flex md4 class="pa-1">
 								<v-layout>
 									<v-flex>
 										<v-card>
@@ -53,37 +53,35 @@
 									</v-flex>
 								</v-layout>
 							</v-flex>
-              <v-flex offset-md4 md4>
+              <v-flex md4 class="pa-1">
+                <v-card>
+                  <v-card-title class="green darken-4 white--text title">
+                    Today's Checklist
+                  </v-card-title>
+                </v-card>
+                <v-card min-height="320px">
+                  <v-card-text>
+                    
+                  </v-card-text>
+                </v-card>
+              </v-flex>
+              <v-flex md4 class="pa-1">
                 <template>
                   <v-card>
                     <v-card-title class="green darken-4 white--text title">
-                      Diagnosis Results
+                      Diagnostic Results
                     </v-card-title>
                   </v-card>
-                  <v-expansion-panel>
-                    <v-expansion-panel-content v-for="(item,i) in diagnosis" :key="i">
-                      <template v-slot:header>
-                        <div class="green--text">{{ item }}</div>
-                      </template>
-                      <v-divider></v-divider>
-                      <v-card>
-                        <v-card-text style="overflow:auto;max-height:100px">
-                          <table class="table">
-                            <tr>
-                              <td>
-                                <a>200001(2020-01-31).png</a>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <a>200001(2020-01-31).png</a>
-                              </td>
-                            </tr>
-                          </table>
-                        </v-card-text>
-                      </v-card>
-                    </v-expansion-panel-content>
-                  </v-expansion-panel>
+                  <v-card max-height="320px" min-height="320px" style="overflow:auto">
+                    <v-card-text>
+                      <v-treeview class="text-xs-left" :open="open" activatable item-key="name" open-on-click :items="diagnosticLogs">
+                        <template slot-scope="{ item }" slot="label">
+                          <a v-if="!item.file" class="black--text"><v-icon>{{ open ? 'fa-folder-open' : 'fa-folder' }}</v-icon> {{ item.name }}</a>
+                          <a v-else @click="viewImage" class="black--text"><v-icon>{{item.file}}</v-icon> {{ item.name }}</a>
+                        </template>
+                      </v-treeview>
+                    </v-card-text>
+                  </v-card>
                 </template>
               </v-flex>
 						</v-layout>
@@ -91,13 +89,67 @@
 				</v-card>
 			</v-flex>
 		</v-layout>
+    <v-dialog v-model="viewResultImage" content-class="modalHeight">
+      <v-card>
+        <v-card-text>
+          <!-- <v-img :src="url"></v-img> -->
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 	</div>
 </template>
 <script>
+  import axios from 'axios';
   export default {
     data: () => ({
+      viewResultImage : false,
       diagnosis : ["Sputum Result", "CXR Result", "TST Result", "Other Examination Result"],
       today: '2019-01-08',
+      open : [],
+      files: {
+        image: 'fa-file-image',
+      },
+      diagnosticLogs : [
+        {
+          name: 'Sputum Result',
+          children: [
+            {
+              name: 'test',
+              file: 'image',
+            },
+          ],
+        },
+        {
+          name: 'CXR Result',
+          children: [
+            {
+              name:'test',
+              file: 'image'
+            }
+          ]
+        },
+        {
+          name: 'TST Result',
+          children: [
+            {
+              name:'test',
+              file: 'image'
+            }
+          ]
+        },
+        {
+          name: 'Other Examination Result',
+          children : [
+            {
+              name: 'Test1',
+              file: 'image'
+            },{
+              name: 'Test',
+              file: 'image'
+            },
+          ]
+        }
+      ],
       events: [
         {
           title: 'Vacation',
@@ -158,8 +210,20 @@
       }
     },
     methods: {
-      open (event) {
-        alert(event.title)
+      viewImage : function(){
+        this.viewResultImage = true;
+      },
+      fetchPatientFile: function(){
+        axios.create({
+          baseURL : this.apiUrl,
+          headers : {
+            'Authorization' : `Bearer ${this.token}`
+          }
+        })
+        .get('/patients/diagnostic/file')
+        .then(function(res){
+          
+        });
       }
     }
   };
@@ -187,5 +251,12 @@
   .table td{border: 1px solid #ddd;padding: 8px;}
   .table tr:nth-child(even){background-color: #f2f2f2;}
   .table tr:hover {background-color: #ddd;}
-
+  .modalHeight {
+    max-width: 50%;
+  }
+  @media only screen and (max-width: 600px){
+    .modalHeight {
+      max-width: 100%;
+    }
+  }
 </style>
