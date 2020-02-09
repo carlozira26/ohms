@@ -3,6 +3,7 @@ namespace Controllers;
 use Models\MedicinesModel;
 use Models\TimeIntakeModel;
 use Models\PatientMedicinesModel;
+use Models\IntakeLogsModel;
 use \Firebase\JWT\JWT;
 
 class MedicinesController{
@@ -238,5 +239,41 @@ class MedicinesController{
 			sort($arr);
 		}
 		return $arr;
+	}
+	public function getMedicineVal($req, $res, $args){
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$date = date('Y-m-d');
+		$val = IntakeLogsModel::select('intake_value')
+			->where('patient_id',$user['id'])
+			->where('date_intake',$date)
+			->first();
+		if($val){
+			$this->response['data'] = $val;
+			$this->response['status'] = true;
+		}
+		return $this->container->response->withJson($this->response);
+	}
+	public function newMedicineVal($req, $res, $args){
+		$body = $req->getParsedBody();
+		$newVal = implode(",",json_decode($body['newVal']));
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$date = date('Y-m-d');
+		if($body['type']=='create'){
+			IntakeLogsModel::create(array(
+				'patient_id' => $user['id'],
+				'intake_value' => $newVal,
+				'date_intake' => $date
+			));
+		}else{
+			IntakeLogsModel::where('patient_id',$user['id'])
+				->where('date_intake',$date)
+				->update(array(
+				'intake_value' => $newVal,
+			));
+		}
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
 	}
 }

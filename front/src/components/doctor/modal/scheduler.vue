@@ -13,6 +13,7 @@
 							landscape
 							v-model="date"
 							:events="arrayEvents"
+							color="green darken-4"
 							event-color="green darken-2"
 							@change="checkMedicineDate"
 						></v-date-picker>
@@ -43,9 +44,7 @@ import VueCookies from "vue-cookies";
 import axios from 'axios';
 
 	export default {
-		mounted : function(){
-			this.fetchMedicineSchedule();
-		},
+
 		props : ['mtitle'],
 		created : function(){
 			this.token = VueCookies.get(this.cookieKey).token;
@@ -86,13 +85,19 @@ import axios from 'axios';
 				const schedule = [];
 				let _this = this;
 				let x = 0;
-				Object.keys(_this.medicineSchedule[_this.date]).sort().forEach(function(key) {
-					_this.prescribedMedicine[x] ={
-						time : key,
-						medicine : _this.medicineSchedule[_this.date][key],
-					};
-					x++;
+				let datelist = [];
+				Object.keys(_this.medicineSchedule).forEach(function (key) {
+					datelist.push(key);
 				});
+				if(datelist.includes(_this.date)){
+					Object.keys(_this.medicineSchedule[_this.date]).sort().forEach(function(key) {
+						_this.prescribedMedicine[x] ={
+							time : key,
+							medicine : _this.medicineSchedule[_this.date][key],
+						};
+						x++;
+					});
+				}
 			}
 		}
 	};

@@ -7,3 +7,5 @@ $app->get('/medicine/get', 'MedicinesController:getMedicineList');
 $app->post('/medicine/list/submit/{id}', 'MedicinesController:submitPatientMedicine');
 $app->get('/medicine/patient/list/{id}','MedicinesController:getPatientMedicine');
 $app->get('/medicine/patient/schedule/{id}','MedicinesController:getPatientMedicineSchedule');
+$app->get('/medicine/value','MedicinesController:getMedicineVal');
+$app->post('/medicine/newvalue','MedicinesController:newMedicineVal');

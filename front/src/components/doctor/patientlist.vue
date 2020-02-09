@@ -2,7 +2,7 @@
 	<div>
 		<v-layout row wrap>
 			<v-flex class="pa-3">
-				<v-card min-width="700px">
+				<v-card min-width="700px" style="overflow:auto">
 					<v-card-title>
 						<h1 class="green--text">Patients List</h1>
 						<v-spacer></v-spacer>

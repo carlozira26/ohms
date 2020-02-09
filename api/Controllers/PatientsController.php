@@ -246,6 +246,48 @@ class PatientsController{
 	}
 
 	public function fetchPatientFile($req, $res, $args){
-		
+		$examType = array("Sputum Examination","CXR Examination","TST Examination", "Other Examination Result");
+		$examList = 
+			array( 
+				array(
+					"name" => "Sputum Examination",
+					"children" => array()
+				),
+				array(
+					"name" => "CXR Examination",
+					"children" => array()
+				),
+				array(
+					"name" => "TST Examination",
+					"children" => array()
+				),
+				array(
+					"name" => "Other Examination Result",
+					"children" => array()
+				)
+			);
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$patientFile = DiagnosticLogsModel::select('diagnostic_type','image_location')->where('patient_id',$user['id'])->get();
+		$count = 0;
+		foreach($examType as $type){
+			foreach($patientFile as $file){
+				$filedate = explode("(", $file['image_location']);
+				if(!in_array($file['diagnostic_type'], $examType)){
+					$forCheck = array();
+					foreach($examList[3]['children'] as $list){
+						array_push($forCheck,$list['name']);
+					}
+					if(!in_array($file['diagnostic_type']."(".$filedate[1], $forCheck)){
+						array_push($examList[3]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1], "file" => "image", "location" => $file['image_location']));
+					}
+
+				}else if($type == $file['diagnostic_type']){
+					array_push($examList[$count]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1] ,"file" => "image", "location" => $file['image_location']));
+				}
+			}
+			$count++;
+		}
+		return $this->container->response->withJson($examList);
 	}
 }
