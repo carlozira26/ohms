@@ -257,7 +257,7 @@ export default {
         },
         takeMedicine : function(index, i){
             this.checkedMedicines = [];
-            this.todaysMedicine[index].medicine[i].selected = !this.todaysMedicine[index].medicine[i].selected;
+            
             for(let timetake in this.todaysMedicine){
                 for(let med in this.todaysMedicine[timetake].medicine){
                     let val = "N";
@@ -267,6 +267,7 @@ export default {
                     this.checkedMedicines.push(val);
                 }
             }
+            console.log(this.todaysMedicine);
             this.newMedicineVal('update');
         },
         getMedicineVal : function(){

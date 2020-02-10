@@ -54,6 +54,12 @@
 					<h2>OHMS</h2>
 				</v-toolbar-title>
 				<v-spacer></v-spacer>
+				<v-badge color="pink">
+					<template v-slot:badge>
+						<span>6</span>
+					</template>
+					<v-btn flat icon><v-icon>fa-envelope</v-icon></v-btn>
+				</v-badge>
 				<v-menu :nudge-width="200" transition="slide-y-transition" bottom left z-index="99">
                     <v-btn slot="activator" icon>
                         <v-icon>fa-angle-down</v-icon>
@@ -66,8 +72,8 @@
                                 </v-list-tile-avatar>
 
                                 <v-list-tile-content>
-                                    <v-list-tile-title>Admin</v-list-tile-title>
-                                    <v-list-tile-sub-title class="orange--text">Ongoing Treatment</v-list-tile-sub-title>
+                                    <v-list-tile-title>{{user.fullname}}</v-list-tile-title>
+                                    <v-list-tile-sub-title :class="color">{{status}}</v-list-tile-sub-title>
                                 </v-list-tile-content>
                             </v-list-tile>
                         </v-list>
@@ -127,20 +133,55 @@ import openMessage from './modal/chatbox.vue';
 // import axios from 'axios';
 
 export default {
+	created : function(){
+		this.role = VueCookies.get(this.cookieKey).data.role;
+		this.user = VueCookies.get(this.cookieKey).data;
+		if(this.role == "none"){
+			this.checkTreatment(this.user.id)
+		}
+	},
 	components : {
 		'open-chatbox' : openMessage
 	},
 	data : () => ({
 		appnav : false,
 		globalLoading : false,
+		treatment : [
+			{ 
+				name : "New",
+				type : "New Patient",
+				color: "primary--text"
+			},
+			{ 
+				name : "Ongoing",
+				type : "Ongoing Treatment",
+				color: "orange--text"
+			},
+			{ 
+				name : "Success",
+				type : "Treatment Success",
+				color: "success--text"
+			},
+			{ 
+				name : "Discontinuation",
+				type : "Treatment Discontinued",
+				color: "red--text"
+			},
+		],
+		status: "New Patient",
+		color : "primary"
 	}),
 
-	created : function(){
-		this.role = VueCookies.get(this.cookieKey).data.role;
-	},
 
 	methods : {
-
+		checkTreatment: function(patientid){
+			for(let stat in this.treatment){
+				if(this.user.status == this.treatment[stat].name){
+					this.status = this.treatment[stat].type;
+					this.color = this.treatment[stat].color;
+				}
+			}
+		}
 	}
 };	
 

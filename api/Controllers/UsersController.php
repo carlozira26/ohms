@@ -61,11 +61,20 @@ class UsersController{
 				$user->token,
 				$this->container["settings"]["jwt"]
 			);
-			$this->response['data'] = array(
-				'id' => $user->id,
-				'fullname' => ucfirst(strtolower($fullname)),
-				'role' => $role,
-			);
+			if($usertype == 'doctor'){
+				$this->response['data'] = array(
+					'id' => $user->id,
+					'fullname' => ucwords(strtolower($fullname)),
+					'role' => $role,
+				);
+			}else{
+				$this->response['data'] = array(
+					'id' => $user->id,
+					'fullname' => ucwords(strtolower($fullname)),
+					'role' => $role,
+					'status' => $user->status
+				);
+			}
 		}
 		return $this->container->response->withJson($this->response);
 	}
