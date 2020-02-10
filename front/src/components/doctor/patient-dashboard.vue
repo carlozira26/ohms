@@ -65,7 +65,7 @@
                                                     <v-list dense :key="`medicine-${index}-${i}`">
                                                         <v-list-tile>
                                                             <v-list-tile-action>
-                                                                <v-checkbox @click="takeMedicine(index,i)" v-model="medicine.selected"></v-checkbox>
+                                                                <v-checkbox @change="takeMedicine(index,i)" v-model="medicine.selected"></v-checkbox>
                                                             </v-list-tile-action>
                                                             {{medicine.name}}
                                                         </v-list-tile>

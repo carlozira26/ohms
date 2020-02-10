@@ -60,7 +60,7 @@ class PatientsController{
 				$this->response['message'] = "Username already used!";
 				$this->response['status'] = "false";
 			}else{
-				$patientCreate = PatientsModel::where('id',$body['id'])
+				$patientEdit = PatientsModel::where('id',$body['id'])
 					->update(array(
 					"firstname" => ucwords(strtolower($body['firstname'])),
 					"middlename" => ucwords(strtolower($body['middlename'])),
@@ -70,6 +70,7 @@ class PatientsController{
 					"gender" => $body['gender'],
 					"mobilenumber" => $body['mobilenumber'],
 					"drtb" => $body['drtb'],
+					"category" => $body['category'],
 					"address" => $body['address'],
 					"remarks" => $body['remarks'],
 					"username" => $body['username'],

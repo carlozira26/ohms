@@ -464,6 +464,7 @@
 					this.mobilenumber = this.patientList[index].mobilenumber;
 					this.patientstatus = this.patientList[index].status;
 					this.drtb = this.patientList[index].drtb;
+					this.tbcategory = this.patientList[index].category;
 					this.address = this.patientList[index].address;
 					this.remarks = this.patientList[index].remarks;
 				}
