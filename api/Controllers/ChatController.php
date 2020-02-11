@@ -47,4 +47,17 @@ class ChatController{
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
+	public function messageSend($req, $res, $args){
+		$body = $req->getParsedBody(); 
+		if (!isset($body['text'])) {
+			return $this->response["message"] = "No message provided";
+		}
+		 
+		$client = new NexmoClient(new NexmoClientCredentialsBasic(API_KEY, API_SECRET));
+		$text = new NexmoMessageText($args['number'], NEXMO_FROM_NUMBER, $body['text']);
+		$client->message()->send($text);
+		
+		$this->response["message"] = "Sending an SMS to " . $args['number'];
+		return $this->container->response->withJson($this->response);
+	}
 }

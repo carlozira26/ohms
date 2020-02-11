@@ -54,12 +54,14 @@
 					<h2>OHMS</h2>
 				</v-toolbar-title>
 				<v-spacer></v-spacer>
-				<v-badge color="pink">
-					<template v-slot:badge>
-						<span>6</span>
-					</template>
-					<v-btn flat icon><v-icon>fa-envelope</v-icon></v-btn>
-				</v-badge>
+				<v-btn flat icon @click="openMessage">
+					<v-badge left color="pink">
+						<template v-slot:badge>
+							<span>6</span>
+						</template>
+						<v-icon>fa-envelope</v-icon>
+					</v-badge>
+				</v-btn>
 				<v-menu :nudge-width="200" transition="slide-y-transition" bottom left z-index="99">
                     <v-btn slot="activator" icon>
                         <v-icon>fa-angle-down</v-icon>
@@ -79,12 +81,12 @@
                         </v-list>
                         <v-divider></v-divider>
                         <v-list>
-                            <v-list-tile>
+                            <v-list-tile @click="openProfile">
                                 <v-list-tile>
                                     <v-icon>fa-user-circle</v-icon>
                                 </v-list-tile>
                                 <v-list-tile-title>
-                                    <span>Account</span>
+                                    <span>My Profile</span>
                                 </v-list-tile-title>
                             </v-list-tile>
                             <v-list-tile>
@@ -125,12 +127,16 @@
 			<router-view></router-view>
 		</v-content>
 		<open-chatbox></open-chatbox>
+		<view-profile></view-profile>
+		<view-message></view-message>
 	</div>
 </template>
 <script>
 import VueCookies from 'vue-cookies';
 import openMessage from './modal/chatbox.vue';
 // import axios from 'axios';
+import viewProfile from './modal/view-profile.vue';
+import viewMessage from './modal/messenger.vue';
 
 export default {
 	created : function(){
@@ -141,7 +147,9 @@ export default {
 		}
 	},
 	components : {
-		'open-chatbox' : openMessage
+		'open-chatbox' : openMessage,
+		'view-profile' : viewProfile,
+		'view-message' : viewMessage
 	},
 	data : () => ({
 		appnav : false,
@@ -181,6 +189,12 @@ export default {
 					this.color = this.treatment[stat].color;
 				}
 			}
+		},
+		openProfile : function(){
+			this.eventHub.$emit('viewProfile', true);
+		},
+		openMessage : function(){
+			this.eventHub.$emit('viewMessage', true);
 		}
 	}
 };	

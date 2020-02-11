@@ -6,7 +6,8 @@
         "wixel/gump": "dev-master",
         "automattic/woocommerce" : "2.0",
         "twig/twig": "^2.6",
-        "endroid/qr-code": "2.5.1"
+        "endroid/qr-code": "2.5.1",
+        "nexmo/client": "^2.0"
     },
     "autoload": {
         "psr-4": {
