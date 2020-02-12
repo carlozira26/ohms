@@ -12,7 +12,7 @@ $app->add(new JwtAuthentication([
     "relaxed" => ["localhost", "127.0.0.1"],
     "header" => "Authorization",
     "regexp" => "/Bearer\s+(.*)$/i",
-    "passthrough" => ['/users/login'],
+    "passthrough" => ['/users/login','/messages/reminder/cron'],
     "callback" => function($request, $response, $params) use ($container){
     	$Utils = new Utils();
     	$user = $Utils->getUserFromBearerToken($request,$container);

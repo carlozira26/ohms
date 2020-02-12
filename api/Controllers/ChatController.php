@@ -3,6 +3,8 @@ namespace Controllers;
 use Models\UsersModel;
 use Models\PatientsModel;
 use Models\MessagesModel;
+use Models\TimeIntakeModel;
+use Models\PatientMedicinesModel;
 use Controllers\Utils;
 use \Firebase\JWT\JWT;
 
@@ -47,17 +49,62 @@ class ChatController{
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
-	public function messageSend($req, $res, $args){
-		$body = $req->getParsedBody(); 
-		if (!isset($body['text'])) {
-			return $this->response["message"] = "No message provided";
-		}
-		 
-		$client = new NexmoClient(new NexmoClientCredentialsBasic(API_KEY, API_SECRET));
-		$text = new NexmoMessageText($args['number'], NEXMO_FROM_NUMBER, $body['text']);
-		$client->message()->send($text);
+	private function messageSend($number, $message){
+
+		$url = 'https://www.itexmo.com/php_api/api.php';
+		$itexmo = array('1' => $number, '2' => $message, '3' => 'TR-CHRIS383442_LBFHR');
+		$param = array(
+		    'http' => array(
+		        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+		        'method'  => 'POST',
+		        'content' => http_build_query($itexmo),
+		    ),
+		);
+		$context  = stream_context_create($param);
+		return file_get_contents($url, false, $context);
+	}
+
+	public function patientReminderCron($req, $res, $args){
+		$medicinesController = new MedicinesController($this->container);
+		$datetoday = '2020-02-12';
+		$patientList = PatientsModel::selectRaw("id, firstname, mobilenumber")->where('status','Ongoing')->get();
+		$message = "";
 		
-		$this->response["message"] = "Sending an SMS to " . $args['number'];
-		return $this->container->response->withJson($this->response);
+		foreach($patientList as $patient){
+			$MedicineList = PatientMedicinesModel::selectRaw('medicines.id, concat(brandname,":",genericname) medicine,pieces,date_added')
+				->join('medicines','patient_medicine.medicineid','=','medicines.id')
+				->where('patient_medicine.uid', $patient['id'])
+				->where('patient_medicine.is_active','Y')
+				->get();
+				$schedule = array();
+				$message = "Hi ".$patient['firstname'].", </br>";
+			foreach($MedicineList as $Medicine){
+				$timeIntake = TimeIntakeModel::select('intakedays','intaketime')
+					->where('is_active','Y')
+					->where('uid', $Medicine['id'])
+					->get();
+
+				$dates = $medicinesController->processMedicineTimeSchedule($Medicine['pieces'],$timeIntake[0]['intaketime'],$timeIntake[0]['intakedays'],$Medicine['date_added']);
+				$intaketime = explode(',',$timeIntake[0]['intaketime']);
+				foreach($dates as $date){
+					if($date == $datetoday){
+						$msgcheck = true;
+						foreach($intaketime as $time){
+							$schedule[$time][] = $Medicine['medicine'];
+						}
+					}
+				}
+				ksort($schedule);
+			}
+			if(count($schedule) > 0){
+				foreach($schedule as $key=>$m){
+					$message .= "</br>".date("H:i A", strtotime($key))."</br>";
+					foreach($m as $medicine){
+						$message .= $medicine."</br>";
+					}
+				}
+				$this->messageSend($patient['mobilenumber'], $message);
+			}
+		}
 	}
 }

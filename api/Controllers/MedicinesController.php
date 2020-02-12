@@ -201,7 +201,7 @@ class MedicinesController{
 			$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
-	private function processMedicineTimeSchedule($pieces,$timelist,$days,$date_added){
+	public function processMedicineTimeSchedule($pieces,$timelist,$days,$date_added){
 		$timelist = explode(',',$timelist);
 		$totaldays = $pieces / count($timelist);
 		$totaldays = (!is_int($totaldays)) ? round($totaldays) : $totaldays;
