@@ -55,12 +55,15 @@
 				</v-toolbar-title>
 				<v-spacer></v-spacer>
 				<v-btn flat icon @click="openMessage">
-					<v-badge left color="pink">
+					<v-badge left color="pink" title="Messages">
 						<template v-slot:badge>
 							<span>6</span>
 						</template>
 						<v-icon>fa-envelope</v-icon>
 					</v-badge>
+				</v-btn>
+				<v-btn flat icon title="Medicine History">
+					<v-icon>fa-clipboard-list</v-icon>
 				</v-btn>
 				<v-menu :nudge-width="200" transition="slide-y-transition" bottom left z-index="99">
                     <v-btn slot="activator" icon>
@@ -126,7 +129,6 @@
 		<v-content>
 			<router-view></router-view>
 		</v-content>
-		<open-chatbox></open-chatbox>
 		<view-profile></view-profile>
 		<view-message></view-message>
 	</div>
@@ -147,7 +149,6 @@ export default {
 		}
 	},
 	components : {
-		'open-chatbox' : openMessage,
 		'view-profile' : viewProfile,
 		'view-message' : viewMessage
 	},
@@ -198,5 +199,4 @@ export default {
 		}
 	}
 };	
-
 </script>

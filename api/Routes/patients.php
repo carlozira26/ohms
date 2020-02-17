@@ -8,3 +8,4 @@ $app->get('/patients/lastid', 'PatientsController:getLastID');
 $app->get('/patients/doctor/{id}', 'PatientsController:fetchDoctor');
 $app->get('/patients/diagnostic', 'PatientsController:fetchDiagnosticResults');
 $app->get('/patients/diagnostic/file', 'PatientsController:fetchPatientFile');
+$app->get('/patients/infected', 'PatientsController:fetchInfected');

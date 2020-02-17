@@ -94,11 +94,35 @@
 		},
 		data: function(){
 			return{
-				dialog : false
+				showHide : false,
+				category: ["Cat I", "Cat II","MDR"],
+				gender: ["Male", "Female"],
+				presumptive: ["Yes","No"],
+				menu : false,
+
+				dialog : false,
+				patientID : '',
+				firstName : '',
+				middleName : '',
+				lastName : '',
+				username : '',
+				password : '',
+				dateofBirth : '',
+				age : '',
+				consultationDate : '',
+				patientgender : '',
+				mobilenumber : '',
+				patientstatus : '',
+				drtb: "Yes",
+				tbcategory : '',
+				address : '',
+				remarks : ''
 			}
 		}, 
 		methods : {
-
+			save : function(date) {
+				this.$refs.menu.save(date);
+			},
 		}
 	};
 </script>

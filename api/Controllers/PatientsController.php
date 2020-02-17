@@ -291,4 +291,36 @@ class PatientsController{
 		}
 		return $this->container->response->withJson($examList);
 	}
+
+	public function fetchInfected($req, $res, $args){
+		$body = $req->getQueryParams();
+		$dates = (!empty($body['date'])) ? explode(" ~ ",$body['date']) : array(date('Y-01-01'), date('Y-12-31'));
+		$datefrom = date('Y-m-d', strtotime($dates[0]));
+		$dateto = date('Y-m-d', strtotime($dates[1]));
+		
+		$patients = PatientsModel::whereBetween('consultationdate',[$datefrom,$dateto])->get();
+		$agelist = array(0,0,0,0,0);
+		
+		foreach($patients as $patient){
+			if($this->getAge($patient['dateofbirth']) <= 17){
+				$agelist[0] += 1;
+			}else if ($this->getAge($patient['dateofbirth']) > 17 && $this->getAge($patient['dateofbirth']) <= 25){
+				$agelist[1] += 1;
+			}else if ($this->getAge($patient['dateofbirth']) > 25 && $this->getAge($patient['dateofbirth']) <=35){
+				$agelist[2] += 1;
+			}else if ($this->getAge($patient['dateofbirth']) > 35 && $this->getAge($patient['dateofbirth']) <= 40){
+				$agelist[3] += 1;
+			}else{
+				$agelist[4] += 1;
+			}
+		}
+		return $this->container->response->withJson($agelist);
+	}
+
+	private function getAge($birthdate){
+		$today = date_create(date('Y-m-d'));
+		$bdate = date_create($birthdate);
+		$datediff = date_diff($bdate, $today);
+		return $datediff->y;
+	}
 }
