@@ -4,6 +4,7 @@ use Models\PatientsModel;
 use Models\UsersModel;
 use Models\PatientLogsModel;
 use Models\DiagnosticLogsModel;
+use Models\PatientIntakeModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -322,5 +323,16 @@ class PatientsController{
 		$bdate = date_create($birthdate);
 		$datediff = date_diff($bdate, $today);
 		return $datediff->y;
+	}
+
+	public function fetchIntakeLogs($req, $res, $args){
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$log = PatientIntakeModel::where('patient_id',$user['id'])->get();
+		if(count($log) > 0){
+			$this->response['data'] = $log;
+			$this->response['status'] = true;
+		}
+		return $this->container->response->withJson($this->response);
 	}
 }

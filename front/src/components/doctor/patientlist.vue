@@ -286,7 +286,6 @@
 		},
 		created : function(){
 			this.token = VueCookies.get(this.cookieKey).token;
-			console.log(this.token);
 			this.role = VueCookies.get(this.cookieKey).data.role;
 			if(this.role == 'none'){
 				this.$router.push('/dashboard');

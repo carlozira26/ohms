@@ -4,6 +4,7 @@ use Models\MedicinesModel;
 use Models\TimeIntakeModel;
 use Models\PatientMedicinesModel;
 use Models\IntakeLogsModel;
+use Models\PatientIntakeModel;
 use \Firebase\JWT\JWT;
 
 class MedicinesController{
@@ -257,6 +258,7 @@ class MedicinesController{
 	public function newMedicineVal($req, $res, $args){
 		$body = $req->getParsedBody();
 		$newVal = implode(",",json_decode($body['newVal']));
+		$medicinename = $body['medicinename'];
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
 		$date = date('Y-m-d');
@@ -272,8 +274,18 @@ class MedicinesController{
 				->update(array(
 				'intake_value' => $newVal,
 			));
+			PatientIntakeModel::create(array(
+				'medicine' => $medicinename,
+				'patient_id' => $user['id']
+			));
 		}
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
+	}
+	public function medicineInstructions($req, $res, $args){
+		$medicineName = $args['medicinename'];
+		$instruction = MedicinesModel::select("instructions")->whereRaw('concat(brandname,":",genericname) = "'.$medicineName.'"')->first();
+		
+		return $this->container->response->withJson($instruction['instructions']);
 	}
 }

@@ -84,7 +84,7 @@
 						}
 					},
 					xaxis: {
-						categories: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August']
+						categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov','Dec']
 					}
 				},
 				series: [{

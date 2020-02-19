@@ -27,8 +27,9 @@ export default {
     data : function(){
         return {
             cookieKey : 'ohmscookiekey',
-            // apiUrl : 'http://122.53.152.8/ohms/api',
+            // apiUrl : 'http://jru-ohms.000webhostapp.com/api',
             apiUrl : 'http://localhost/ohms/api',
+            // apiUrl : 'http://122.53.152.8/ohms/api',
             token : '',
             eventHub: eventHub,
             userData : {},

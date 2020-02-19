@@ -62,7 +62,7 @@
 						<v-icon>fa-envelope</v-icon>
 					</v-badge>
 				</v-btn>
-				<v-btn flat icon title="Medicine History">
+				<v-btn flat icon title="Medicine History" @click="openLogs">
 					<v-icon>fa-clipboard-list</v-icon>
 				</v-btn>
 				<v-menu :nudge-width="200" transition="slide-y-transition" bottom left z-index="99">
@@ -131,11 +131,13 @@
 		</v-content>
 		<view-profile></view-profile>
 		<view-message></view-message>
+		<view-logs></view-logs>
 	</div>
 </template>
 <script>
 import VueCookies from 'vue-cookies';
 import openMessage from './modal/chatbox.vue';
+import openLogs from './modal/intakelogs.vue';
 // import axios from 'axios';
 import viewProfile from './modal/view-profile.vue';
 import viewMessage from './modal/messenger.vue';
@@ -147,12 +149,17 @@ export default {
 		if(this.role == "none"){
 			this.checkTreatment(this.user.id)
 		}
+		let _this = this;
+		this.connect = new WebSocket('ws://localhost:3552/chat');
+		this.sendMessage();
 	},
 	components : {
 		'view-profile' : viewProfile,
-		'view-message' : viewMessage
+		'view-message' : viewMessage,
+		'view-logs'    : openLogs
 	},
 	data : () => ({
+		connect : '',
 		appnav : false,
 		globalLoading : false,
 		treatment : [
@@ -178,7 +185,7 @@ export default {
 			},
 		],
 		status: "New Patient",
-		color : "primary"
+		color : "primary",
 	}),
 
 
@@ -195,7 +202,20 @@ export default {
 			this.eventHub.$emit('viewProfile', true);
 		},
 		openMessage : function(){
-			this.eventHub.$emit('viewMessage', true);
+			this.eventHub.$emit('viewMessage', this.connect);
+		},
+		openLogs : function(){
+			this.eventHub.$emit('viewLogs', true);
+		},
+		sendMessage : function(){
+			let _this = this;
+			this.connect.onmessage = function(e) { 
+				console.log(e.data); 
+			};
+			this.connect.onopen = function(e) {
+				console.log("Connection established!");
+				_this.connect.send('Hello Me!');
+			}
 		}
 	}
 };	

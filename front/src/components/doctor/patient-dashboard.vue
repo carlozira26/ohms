@@ -65,9 +65,26 @@
                                                     <v-list dense :key="`medicine-${index}-${i}`">
                                                         <v-list-tile>
                                                             <v-list-tile-action>
-                                                                <v-checkbox @change="takeMedicine(index,i)" v-model="medicine.selected"></v-checkbox>
+                                                                <template v-if="medicine.selected == false">
+                                                                    <v-checkbox @change="takeMedicine(index,i,medicine.name)" v-model="medicine.selected"></v-checkbox>
+                                                                </template>
+                                                                <template v-else>
+                                                                    <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
+                                                                </template>
                                                             </v-list-tile-action>
                                                             {{medicine.name}}
+                                                            <v-spacer></v-spacer>
+                                                            <v-menu open-on-hover right bottom>
+                                                                <template v-slot:activator="{ on }">
+                                                                    <v-btn fab small icon><v-icon v-on="on" color="green darken-4">fa-info-circle</v-icon></v-btn>
+                                                                </template>
+                                                                <v-card left width="200px">
+                                                                    <v-card-text>
+                                                                        <h4>Medicine Instructions</h4>
+                                                                        {{ medicine.instructions }}
+                                                                    </v-card-text>
+                                                                </v-card>
+                                                            </v-menu>
                                                         </v-list-tile>
                                                     </v-list>
                                                 </template>
@@ -122,7 +139,6 @@ export default {
         this.token = VueCookies.get(this.cookieKey).token;
         this.patientid = VueCookies.get(this.cookieKey).data.id;
         this.fetchPatientFile();
-        this.getMedicineVal();
         this.fetchMedicineSchedule(this.patientid);
     },
     data: () => ({
@@ -187,7 +203,7 @@ export default {
                 _this.arrayEvents = res.data.dates;
                 _this.medicineSchedule = res.data.data;
                 _this.plotCalendarEvents();
-                _this.todaysCheckList();
+                _this.getMedicineVal();
             });
         },
 
@@ -220,55 +236,50 @@ export default {
             let _this = this,
             datelist = [],
             val = [],
-            x = 0,
-            y = 0;
-            
+            y = 0,
+            instr = "";
             Object.keys(_this.medicineSchedule).forEach(function (key) {
                 datelist.push(key);
             });
+
             if(datelist.includes(_this.today)){
-                Object.keys(_this.medicineSchedule[_this.today]).sort().forEach(function(key) {
-                    let list = []; 
-                    for(let medicine in _this.medicineSchedule[_this.today][key]){
+                Object.keys(_this.medicineSchedule[_this.today]).sort().forEach(async function(key) {
+                    let list = [];
+                    for(let medicine in _this.medicineSchedule[_this.today][key]){ // tagged
                         let sel = false;
+                        instr = await _this.getInstructions(_this.medicineSchedule[_this.today][key][medicine], _this.apiUrl, _this.token);
                         if(_this.checkedMedicines.length > 0){
                             if(_this.checkedMedicines[y] == "Y"){
                                 sel = true;
                             }
-                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
+                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], instructions: instr.data, selected : sel });
                         }else{
                             val.push("N"),
-                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
+                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], instructions: instr.data, selected : sel });
                         }
                         y = y+1;
                     }
-
-                    _this.todaysMedicine[x] ={
+                    _this.todaysMedicine.push({
                         time : key,
                         medicine : list,
-                    };
-                    x++;
-                });
+                    });
+                }); 
+
                 if(_this.checkedMedicines.length == 0){
                     _this.checkedMedicines = val;
                     _this.newMedicineVal('create');
                 }
+
             }
         },
-        takeMedicine : function(index, i){
-            this.checkedMedicines = [];
-            
-            for(let timetake in this.todaysMedicine){
-                for(let med in this.todaysMedicine[timetake].medicine){
-                    let val = "N";
-                    if(this.todaysMedicine[timetake].medicine[med].selected == true){
-                        val = "Y";
-                    }
-                    this.checkedMedicines.push(val);
+        getInstructions : async (medicine, url, token) =>{
+            return axios.create({
+                baseURL : url,
+                headers : {
+                    'Authorization' : `Bearer ${token}`
                 }
-            }
-            console.log(this.todaysMedicine);
-            this.newMedicineVal('update');
+            })
+            .get('/medicine/instructions/'+medicine);
         },
         getMedicineVal : function(){
             let _this = this;
@@ -283,12 +294,28 @@ export default {
                 if(res.data.status){
                     _this.checkedMedicines = res.data.data.intake_value.split(",");
                 }
+                
+                _this.todaysCheckList();
             });
         },
-        newMedicineVal : function(val){
+        takeMedicine : function(index, i,medicinename){
+            this.checkedMedicines = [];
+            for(let timetake in this.todaysMedicine){
+                for(let med in this.todaysMedicine[timetake].medicine){
+                    let val = "N";
+                    if(this.todaysMedicine[timetake].medicine[med].selected == true){
+                        val = "Y";
+                    }
+                    this.checkedMedicines.push(val);
+                }
+            }
+            this.newMedicineVal('update', medicinename);
+        },
+        newMedicineVal : function(val, medicinename){
             let _this = this,
             formData = new FormData();
             formData.append('newVal',JSON.stringify(_this.checkedMedicines));
+            formData.append('medicinename',medicinename);
             formData.append('type',val);
             axios.create({
                 baseURL : this.apiUrl,

@@ -50,9 +50,9 @@ class ChatController{
 		return $this->container->response->withJson($this->response);
 	}
 	private function messageSend($number, $message){
-
+		echo ($message);
 		$url = 'https://www.itexmo.com/php_api/api.php';
-		$itexmo = array('1' => $number, '2' => $message, '3' => 'TR-CHRIS383442_LBFHR');
+		$itexmo = array('1' => $number, '2' => substr($message, 0, 100), '3' => 'TR-CHRIS383442_LBFHR');
 		$param = array(
 		    'http' => array(
 		        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
@@ -66,7 +66,7 @@ class ChatController{
 
 	public function patientReminderCron($req, $res, $args){
 		$medicinesController = new MedicinesController($this->container);
-		$datetoday = '2020-02-12';
+		$datetoday = '2020-02-20';
 		$patientList = PatientsModel::selectRaw("id, firstname, mobilenumber")->where('status','Ongoing')->get();
 		$message = "";
 		
@@ -77,7 +77,7 @@ class ChatController{
 				->where('patient_medicine.is_active','Y')
 				->get();
 				$schedule = array();
-				$message = "Hi ".$patient['firstname'].", </br>";
+				$message = "Hi ".$patient['firstname'].", \n";
 			foreach($MedicineList as $Medicine){
 				$timeIntake = TimeIntakeModel::select('intakedays','intaketime')
 					->where('is_active','Y')
@@ -98,9 +98,9 @@ class ChatController{
 			}
 			if(count($schedule) > 0){
 				foreach($schedule as $key=>$m){
-					$message .= "</br>".date("H:i A", strtotime($key))."</br>";
+					$message .= "\n".date("H:i A", strtotime($key))."\n";
 					foreach($m as $medicine){
-						$message .= $medicine."</br>";
+						$message .= $medicine."\n";
 					}
 				}
 				$this->messageSend($patient['mobilenumber'], $message);
