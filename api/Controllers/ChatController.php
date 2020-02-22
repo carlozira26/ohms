@@ -107,4 +107,88 @@ class ChatController{
 			}
 		}
 	}
+	public function getMessageList($req, $res, $args){
+		$usertype = $_GET['usertype'];
+		$Utils = new Utils();
+		$user = ($usertype == 'patient') ? $Utils->getPatientFromBearerToken($req, $this->container) : $Utils->getUserFromBearerToken($req, $this->container);
+
+		$messages = MessagesModel::selectRaw('messages.doctor_id,concat(users.firstname," ",users.lastname) as doctor_name, messages.patient_id, concat(patients.firstname, " ",patients.lastname) as patient_name, message')
+			->join('users','messages.doctor_id','users.id')
+			->join('patients','messages.patient_id','patients.id');
+		$unseenmessages = MessagesModel::selectRaw('messages.doctor_id, messages.patient_id, count(messages.id) as count');
+
+		if($usertype == 'patient'){
+			$messages = $messages
+				->where('messages.patient_id',$user['id']);
+			$messages = $messages->groupBy('messages.doctor_id');
+			$unseenmessages = $unseenmessages
+				->where('messages.patient_id',$user['id'])
+				->where('patient_seen','N');
+		}else{
+			$messages = $messages
+				->where('messages.doctor_id',$user['id']);
+			$messages = $messages->groupBy('messages.patient_id');
+			$unseenmessages = $unseenmessages
+				->where('messages.doctor_id',$user['id'])
+				->where('doctor_seen','N');				
+		}
+
+		$messages = $messages->get();
+		$unseenmessages = $unseenmessages->get();
+		foreach($messages as $message){
+			$message['unseen'] = 0;
+			foreach($unseenmessages as $unseen){
+				if($message['doctor_id'] == $unseen['doctor_id'] && $message['patient_id'] == $unseen['patient_id']){
+					$message['unseen'] = $unseen['count'];
+				}
+			}
+		}
+
+		$this->response['status'] = true;
+		$this->response['data'] = $messages;
+
+		return $this->container->response->withJson($this->response);
+	}
+	public function getMessages($req, $res, $args){
+		$receiverid = $args['receiverid'];
+		$body = $req->getParsedBody();
+		$userType = $body['userType'];
+
+		$Utils = new Utils();
+		$user = ($userType == 'patient') ? $Utils->getPatientFromBearerToken($req, $this->container) : $Utils->getUserFromBearerToken($req, $this->container);
+
+		$message = MessagesModel::select('message_from','message');
+		if($userType == 'patient'){
+			$message = $message
+				->where('patient_id', $user['id'])
+				->where('doctor_id',$receiverid);
+		}else{
+			$message = $message
+				->where('patient_id', $receiverid)
+				->where('doctor_id', $user['id']);
+		}
+		$message = $message->get();
+		$this->response['status'] = true;
+		$this->response['data'] = $message;
+		return $this->container->response->withJson($this->response);
+	}
+	public function submitMessage($req, $res, $args){
+		$body = $req->getParsedBody();
+		$send = ($body['usertype'] == 'patient') ? 
+		array(
+			'patient_id' => $body['senderid'],
+			'doctor_id' => $body['receiverid'],
+			'message' => $body['message'],
+			'message_from' => $body['usertype']
+		) : array(
+			'patient_id' => $body['receiverid'],
+			'doctor_id' => $body['senderid'],
+			'message' => $body['message'],
+			'message_from' => $body['usertype']
+		);
+
+		MessagesModel::create($send);
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
 }

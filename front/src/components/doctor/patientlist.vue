@@ -102,7 +102,7 @@
 														<v-list-tile-title>Scheduler</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('showMessage',patient.id)">
+													<v-list-tile @click="openMessage('viewMessage',patient.id)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-comment-medical</v-icon>
 														</v-list-tile-avatar>
@@ -287,6 +287,7 @@
 		created : function(){
 			this.token = VueCookies.get(this.cookieKey).token;
 			this.role = VueCookies.get(this.cookieKey).data.role;
+			this.wsconnect = new WebSocket(this.websocket);
 			if(this.role == 'none'){
 				this.$router.push('/dashboard');
 			}
@@ -422,7 +423,6 @@
 				})
 				.get('/patients/list?page='+_this.pagination.page+'&search='+_this.search+'&sort='+_this.sortType+"&status="+_this.statusFilter)
 				.then(function(res){
-					console.log(res.data.data);
 					_this.patientList = res.data.data;
 					_this.headCount = res.data.count.count;
 					_this.pagination.length = Math.ceil(res.data.count.count / 20);
@@ -430,6 +430,9 @@
 			},
 			openMedicineViewer(){
 				this.eventHub.$emit("showMedicineList",true);
+			},
+			openMessage : function(modal, patientID){
+				this.eventHub.$emit(modal, {'wsconnect': this.wsconnect ,'patientID': patientID});
 			},
 			openModal : function(modal,patientID){
 				this.eventHub.$emit(modal, {'patientID': patientID});

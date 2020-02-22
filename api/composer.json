@@ -6,10 +6,8 @@
         "wixel/gump": "dev-master",
         "automattic/woocommerce" : "2.0",
         "twig/twig": "^2.6",
-        "endroid/qr-code": "2.5.1",
-        "nexmo/client": "^2.0",
-        "cboden/ratchet": "^0.4.1"
-    },
+        "cboden/ratchet": "^0.4"
+   },
     "autoload": {
         "psr-4": {
           "Controllers\\": "Controllers/",

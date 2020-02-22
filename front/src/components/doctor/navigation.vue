@@ -148,10 +148,9 @@ export default {
 		this.user = VueCookies.get(this.cookieKey).data;
 		if(this.role == "none"){
 			this.checkTreatment(this.user.id)
+			this.wsconnect = new WebSocket(this.websocket);
 		}
 		let _this = this;
-		this.connect = new WebSocket('ws://localhost:3552/chat');
-		this.sendMessage();
 	},
 	components : {
 		'view-profile' : viewProfile,
@@ -202,21 +201,11 @@ export default {
 			this.eventHub.$emit('viewProfile', true);
 		},
 		openMessage : function(){
-			this.eventHub.$emit('viewMessage', this.connect);
+			this.eventHub.$emit('viewMessage', { 'wsconnect' : this.wsconnect});
 		},
 		openLogs : function(){
 			this.eventHub.$emit('viewLogs', true);
 		},
-		sendMessage : function(){
-			let _this = this;
-			this.connect.onmessage = function(e) { 
-				console.log(e.data); 
-			};
-			this.connect.onopen = function(e) {
-				console.log("Connection established!");
-				_this.connect.send('Hello Me!');
-			}
-		}
 	}
 };	
 </script>

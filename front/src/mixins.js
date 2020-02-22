@@ -28,8 +28,9 @@ export default {
         return {
             cookieKey : 'ohmscookiekey',
             // apiUrl : 'http://jru-ohms.000webhostapp.com/api',
+            // apiUrl : 'http://localhost/ohms/api',
             apiUrl : 'http://localhost/ohms/api',
-            // apiUrl : 'http://122.53.152.8/ohms/api',
+            websocket : 'ws://122.53.152.8:3552/',
             token : '',
             eventHub: eventHub,
             userData : {},
@@ -50,7 +51,8 @@ export default {
                     return pattern.test(value) || 'Required';
                 },
             },
-            globalLoading : false
+            globalLoading : false,
+            wsconnect : '' 
         }
     }, 
     methods : {

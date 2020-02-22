@@ -13,7 +13,7 @@ class MessagesModel extends Model{
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "user_type", "message_from", "message_to", "message", "is_seen", "created_at"
+    	"id", "doctor_id", "patient_id", "message_from", "message", "doctor_seen", "patient_seen", "created_at"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

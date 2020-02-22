@@ -1,4 +1,8 @@
 <?php
+use Ratchet\Server\IoServer;
+use Ratchet\WebSocket\WsServer;
+use Ratchet\Http\HttpServer;
+
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 
@@ -37,7 +41,16 @@ class Api implements MessageComponentInterface {
         $conn->close();
     }
 }
+    $server = IoServer::factory(
+        new HttpServer(
+            new WsServer(
+                new Api()
+            )
+        ),
+        3552
+    );
 
-    $app = new Ratchet\App('localhost', 3552);
-    $app->route('/chat', new Api, array('*'));
-    $app->run();
+    $server->run();
+    // $app = new Ratchet\App('localhost', 3552);
+    // $app->route('/chat', new Api, array('*'));
+    // $app->run();

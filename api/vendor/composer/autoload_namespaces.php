@@ -8,5 +8,5 @@ $baseDir = dirname($vendorDir);
 return array(
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'Pimple' => array($vendorDir . '/pimple/pimple/src'),
-    'BaconQrCode' => array($vendorDir . '/bacon/bacon-qr-code/src'),
+    'Evenement' => array($vendorDir . '/evenement/evenement/src'),
 );
