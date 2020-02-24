@@ -9,4 +9,5 @@ $app->get('/patients/doctor/{id}', 'PatientsController:fetchDoctor');
 $app->get('/patients/diagnostic', 'PatientsController:fetchDiagnosticResults');
 $app->get('/patients/diagnostic/file', 'PatientsController:fetchPatientFile');
 $app->get('/patients/infected', 'PatientsController:fetchInfected');
+$app->get('/patients/outcomes', 'PatientsController:fetchOutcomes');
 $app->get('/patient/medicinelogs', 'PatientsController:fetchIntakeLogs');

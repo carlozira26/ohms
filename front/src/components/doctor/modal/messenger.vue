@@ -6,7 +6,7 @@
 					<h2>Messenger</h2>
 				</template>
 				<template v-else>
-					<v-btn flat icon @click="selectnback" small><v-icon color="white" small>fa-chevron-left</v-icon></v-btn>
+					<v-btn flat icon @click="selectnback" small v-if="userType=='patient'"><v-icon color="white" small>fa-chevron-left</v-icon></v-btn>
 					<h3>{{ receivername }}</h3>
 				</template>
 			</v-card-title>
@@ -89,7 +89,9 @@ export default {
 				this.pt = 1;
 				this.userType = "patient";
 			}else{
-				this.pt = 2;
+				let patientDetails = val.patientDetails;
+				let patientname = patientDetails.firstname+" "+patientDetails.lastname; 
+				this.selectnback(this.senderid,0,patientDetails.id,patientname);
 				this.userType = "doctor";
 			}
 
@@ -134,13 +136,19 @@ export default {
 	}, 
 	methods : {
 		selectnback : function(doctorid, doctorname, patientid, patientname){
-			if(this.pt == 1){
-				this.receiverid = (this.userType=='patient') ? doctorid : patientid;
-				this.receivername = (this.userType=='patient') ? doctorname : patientname;
+			this.receiverid = (this.userType=='patient') ? doctorid : patientid;
+			this.receivername = (this.userType=='patient') ? doctorname : patientname;
+			
+			if(this.userType == 'patient'){
+				if(this.pt == 1){
+					this.pt = 2;
+					this.fetchMessage();
+				}else{
+					this.pt = 1;
+				}
+			}else{
 				this.pt = 2;
 				this.fetchMessage();
-			}else{
-				this.pt = 1;
 			}
 		},
 		fetchMessageList : function(){

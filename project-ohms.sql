@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 30, 2020 at 07:41 PM
+-- Generation Time: Feb 23, 2020 at 05:56 PM
 -- Server version: 10.4.8-MariaDB
 -- PHP Version: 7.1.32
 
@@ -40,6 +40,19 @@ CREATE TABLE `diagnostic_logs` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `intake_logs`
+--
+
+CREATE TABLE `intake_logs` (
+  `id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `intake_value` varchar(100) NOT NULL,
+  `date_intake` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `medicines`
 --
 
@@ -59,11 +72,12 @@ CREATE TABLE `medicines` (
 
 CREATE TABLE `messages` (
   `id` int(11) NOT NULL,
-  `user_type` varchar(30) NOT NULL,
-  `message_from` int(11) NOT NULL,
-  `message_to` int(11) NOT NULL,
+  `doctor_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `message_from` varchar(50) DEFAULT NULL,
   `message` text NOT NULL,
-  `is_seen` enum('Y','N') NOT NULL DEFAULT 'N',
+  `doctor_seen` enum('Y','N') NOT NULL DEFAULT 'N',
+  `patient_seen` enum('Y','N') NOT NULL DEFAULT 'N',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -93,6 +107,19 @@ CREATE TABLE `patients` (
   `remarks` varchar(200) DEFAULT NULL,
   `token` varchar(100) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `patient_intake`
+--
+
+CREATE TABLE `patient_intake` (
+  `id` int(11) NOT NULL,
+  `medicine` varchar(100) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `patient_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -166,12 +193,6 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `firstname`, `middlename`, `lastname`, `birthdate`, `gender`, `contact_number`, `licensenumber`, `specialization`, `clinic_name`, `clinic_address`, `email`, `password`, `usertype`, `token`, `is_active`) VALUES
-(1, 'Anonymous', 'Test', 'Admin', '1995-05-22', 'Male', '+639012345678', '2165723', 'test', 'Bagong Silang Health Center', 'Mandaluyong Street', 'admin@gmail.com', '0e80d388c94b6f9a9a64242602842df1', 1, 'gsHawgTw12FGaghajaj124', 'Y')
---
 -- Indexes for dumped tables
 --
 
@@ -180,6 +201,14 @@ INSERT INTO `users` (`id`, `firstname`, `middlename`, `lastname`, `birthdate`, `
 --
 ALTER TABLE `diagnostic_logs`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `intake_logs`
+--
+ALTER TABLE `intake_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `patient_id` (`patient_id`),
+  ADD KEY `date_intake` (`date_intake`);
 
 --
 -- Indexes for table `medicines`
@@ -202,6 +231,12 @@ ALTER TABLE `patients`
   ADD KEY `middlename` (`middlename`),
   ADD KEY `lastname` (`lastname`),
   ADD KEY `consultationdate` (`consultationdate`);
+
+--
+-- Indexes for table `patient_intake`
+--
+ALTER TABLE `patient_intake`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `patient_logs`
@@ -238,6 +273,12 @@ ALTER TABLE `diagnostic_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `intake_logs`
+--
+ALTER TABLE `intake_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `medicines`
 --
 ALTER TABLE `medicines`
@@ -253,6 +294,12 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `patients`
 --
 ALTER TABLE `patients`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `patient_intake`
+--
+ALTER TABLE `patient_intake`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -277,7 +324,7 @@ ALTER TABLE `time_intake`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

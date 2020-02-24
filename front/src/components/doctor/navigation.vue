@@ -56,9 +56,9 @@
 				<v-spacer></v-spacer>
 				<v-btn flat icon @click="openMessage">
 					<v-badge left color="pink" title="Messages">
-						<template v-slot:badge>
+						<!-- <template v-slot:badge>
 							<span>6</span>
-						</template>
+						</template> -->
 						<v-icon>fa-envelope</v-icon>
 					</v-badge>
 				</v-btn>
@@ -136,7 +136,6 @@
 </template>
 <script>
 import VueCookies from 'vue-cookies';
-import openMessage from './modal/chatbox.vue';
 import openLogs from './modal/intakelogs.vue';
 // import axios from 'axios';
 import viewProfile from './modal/view-profile.vue';

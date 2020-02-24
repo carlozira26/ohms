@@ -335,4 +335,87 @@ class PatientsController{
 		}
 		return $this->container->response->withJson($this->response);
 	}
+
+	public function fetchOutcomes($req, $res, $args){
+		$d = explode(" ~ ",$_GET['date']); 
+		$today = ($_GET['date'] == '') ? date('Y-m-d') : date('Y-m-d', strtotime($d[1]));
+		$datefrom = ($_GET['date'] == '') ? date('Y-m-d', strtotime($today . "-11 months")) : date('Y-m-d', strtotime($d[0]));
+		
+		$d1 = date_create($today);
+		$d2 = date_create($datefrom);
+		$ddiff = date_diff($d1,$d2); 
+
+		$patientlist = array();
+		$monthlist = array();
+		for($x=0; $x < $ddiff->format('%m') +1 ; $x++){
+			array_unshift($monthlist,date('M',strtotime($today." -".$x." month")));
+		}
+		$arrstat = array(
+			'New' => array(0,0,0,0,0,0,0,0,0,0,0,0),
+			'Ongoing' => array(0,0,0,0,0,0,0,0,0,0,0,0),
+			'Success' => array(0,0,0,0,0,0,0,0,0,0,0,0),
+			'Discontinuation' => array(0,0,0,0,0,0,0,0,0,0,0,0)
+		);
+
+		$patientlistqry = PatientLogsModel::selectRaw("uid,status,cast(created_at as date) as date")
+			->whereRaw('cast(created_at as date) between "'.$datefrom.'" and "'.$today.'"')
+			->orderBy('created_at')->get();
+		
+		foreach($patientlistqry as $patients){
+			$patientlist[$patients['uid']]['status'][] = $patients['status'];
+			$patientlist[$patients['uid']]['dates'][] = $patients['date'];
+		}
+
+		foreach($patientlist as $key=>$patient){
+			if(in_array('Discontinuation',$patient['status'])){
+				$date = $patient['dates'][array_search('Discontinuation',$patient['status'])];
+				$mo = array_search( date('M', strtotime($date)),$monthlist);
+				
+				$arrstat['Discontinuation'][$mo] = $arrstat['Discontinuation'][$mo] + 1;
+			}if(in_array('Success',$patient['status'])){
+				$date = $patient['dates'][array_search('Success',$patient['status'])];
+				$mo = array_search( date('M', strtotime($date)),$monthlist);
+				
+				$arrstat['Success'][$mo] = $arrstat['Success'][$mo] + 1;
+			}if(in_array('Ongoing',$patient['status'])){
+				$checks = in_array('Success',$patient['status']);
+				$checkd = in_array('Discontinuation',$patient['status']);
+				if($checks){
+					$successm = date('n', strtotime($patient['dates'][array_search('Success',$patient['status'])]));
+					$successmo = date_create($patient['dates'][array_search('Success',$patient['status'])]);
+					$ongoingmo = date_create($patient['dates'][array_search('Ongoing',$patient['status'])]);
+					$diff = date_diff($successmo,$ongoingmo)->format('%m');
+					for($x=$successm-1; $x > ($successm - $diff) ; $x--){
+						$oldMonth =  date('Y-m-d', strtotime($patient['dates'][array_search('Success',$patient['status'])] . "-$x month"));
+						$mo = array_search( date('M', strtotime($oldMonth)), $monthlist);
+						$arrstat['Ongoing'][$mo] = $arrstat['Ongoing'][$mo] + 1;
+					}
+				}
+				if($checkd){
+					$discontm = date('n', strtotime($patient['dates'][array_search('Discontinuation',$patient['status'])]));
+					$discontmo = date_create($patient['dates'][array_search('Discontinuation',$patient['status'])]);
+					$ongoingmo = date_create($patient['dates'][array_search('Ongoing',$patient['status'])]);
+					$diff = date_diff($successmo,$ongoingmo)->format('%m');
+						
+					for($x=$successm-1; $x > ($successm - $diff) ; $x--){
+						$oldMonth =  date('Y-m-d', strtotime($patient['dates'][array_search('Discontinuation',$patient['status'])] . "-$x month"));
+						$mo = array_search( date('M', strtotime($oldMonth)), $monthlist);
+						$arr['Ongoing'][$mo] = $arr['Ongoing'][$mo] + 1;
+					}
+				}
+				$date = $patient['dates'][array_search('Ongoing',$patient['status'])];
+				$mo = array_search( date('M', strtotime($date)),$monthlist);
+				
+				$arrstat['Ongoing'][$mo] = $arrstat['Ongoing'][$mo] + 1;
+			}if(in_array('New',$patient['status'])){
+				$date = $patient['dates'][array_search('New',$patient['status'])];
+				$mo = array_search( date('M', strtotime($date)),$monthlist);
+				$arrstat['New'][$mo] = $arrstat['New'][$mo] + 1;		
+			}
+		}
+		$this->response['data'] = $arrstat;
+		$this->response['months'] = $monthlist;
+
+		return $this->container->response->withJson($this->response);
+	}
 }

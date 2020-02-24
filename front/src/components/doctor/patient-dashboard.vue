@@ -273,13 +273,14 @@ export default {
             }
         },
         getInstructions : async (medicine, url, token) =>{
+
             return axios.create({
                 baseURL : url,
                 headers : {
                     'Authorization' : `Bearer ${token}`
                 }
             })
-            .get('/medicine/instructions/'+medicine);
+            .get('/medicine/instructions?medicine='+medicine);
         },
         getMedicineVal : function(){
             let _this = this;

@@ -102,7 +102,7 @@
 														<v-list-tile-title>Scheduler</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openMessage('viewMessage',patient.id)">
+													<v-list-tile @click="openMessage('viewMessage',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-comment-medical</v-icon>
 														</v-list-tile-avatar>
@@ -431,8 +431,9 @@
 			openMedicineViewer(){
 				this.eventHub.$emit("showMedicineList",true);
 			},
-			openMessage : function(modal, patientID){
-				this.eventHub.$emit(modal, {'wsconnect': this.wsconnect ,'patientID': patientID});
+			openMessage : function(modal, index){
+				let patientdetails = this.patientList[index];
+				this.eventHub.$emit(modal, {'wsconnect': this.wsconnect ,'patientDetails': patientdetails});
 			},
 			openModal : function(modal,patientID){
 				this.eventHub.$emit(modal, {'patientID': patientID});

@@ -10,4 +10,4 @@ $app->get('/medicine/get', 'MedicinesController:getMedicineList');
 $app->get('/medicine/patient/list/{id}','MedicinesController:getPatientMedicine');
 $app->get('/medicine/patient/schedule/{id}','MedicinesController:getPatientMedicineSchedule');
 $app->get('/medicine/value','MedicinesController:getMedicineVal');
-$app->get('/medicine/instructions/{medicinename}','MedicinesController:medicineInstructions');
+$app->get('/medicine/instructions','MedicinesController:medicineInstructions');

@@ -68,6 +68,7 @@
 		},
 		mounted : function(){
 			this.getInfected();
+			this.getStatusOutcomes();
 		},
 		data: function() {
 			return {
@@ -84,36 +85,27 @@
 						}
 					},
 					xaxis: {
-						categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov','Dec']
+						categories: [],
 					}
 				},
-				series: [{
-						name: 'NEW',
-						data: [30, 40, 45, 50, 49, 60, 70, 91]
-					},
-					{
-						name: 'ONGOING',
-						data: [40, 30, 55, 30, 27, 30, 70, 86]
-					},
-					{
-						name: 'SUCCESS',
-						data: [40, 30, 55, 30, 27, 30, 70, 86]
-					},
-					{
-						name: 'DISCONTINUED',
-						data: [40, 30, 55, 30, 27, 30, 70, 86]
-					}
-				],
+				series: [],
 
 				pieOptions : {
 					labels : ['17 below','18 to 25', '26 to 35','36 to 40','41 above']
 				},
-				pieSeries : []
+				pieSeries : [],
+				barSeries : []
 			}
 		},
 		methods : {
-			dateRange : function(){
+			dateRange : async function(){
 				let d1="",d2="";
+				this.ApexCharts.exec("Chart", "updateOptions", {
+					xaxis: {
+					categories: ["A", "B", "C"]
+					}
+					});
+				this.options.xaxis.categories =[];
 				if(this.date1!=''){
 					d1 = new Date(this.date1).toDateString().substr(4);
 					this.date = d1+" ~ "+d2;
@@ -121,6 +113,7 @@
 					d2 = new Date(this.date2).toDateString().substr(4);
 					this.date = d1+" ~ "+d2;
 					this.getInfected();
+					this.getStatusOutcomes();
 				}
 			},
 			getInfected : function(){
@@ -135,6 +128,30 @@
 				.get('/patients/infected?date='+_this.date)
 				.then(function(res){
 					_this.pieSeries = res.data;
+				})
+			},
+			getStatusOutcomes : function(){
+				let _this = this;
+				_this.series = [];
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/patients/outcomes?date='+_this.date)
+				.then(function(res){
+					let x=0;
+					for(let i in res.data.data){
+						_this.series.push({
+							name : i,
+							data : res.data.data[i]
+						});
+					}
+					
+					for(let i in res.data.months){
+						_this.options.xaxis.categories.push(res.data.months[i]);
+					}
 				})
 			}
 		},

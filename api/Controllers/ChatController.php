@@ -119,20 +119,22 @@ class ChatController{
 
 		if($usertype == 'patient'){
 			$messages = $messages
-				->where('messages.patient_id',$user['id']);
-			$messages = $messages->groupBy('messages.doctor_id');
+				->where('messages.patient_id',$user['id'])
+				->groupBy('messages.doctor_id')
+				->orderBy('messages.created_at','desc');
 			$unseenmessages = $unseenmessages
 				->where('messages.patient_id',$user['id'])
 				->where('patient_seen','N');
 		}else{
 			$messages = $messages
-				->where('messages.doctor_id',$user['id']);
-			$messages = $messages->groupBy('messages.patient_id');
+				->where('messages.doctor_id',$user['id'])
+				->groupBy('messages.patient_id')
+				->orderBy('messages.created_at','desc');
 			$unseenmessages = $unseenmessages
 				->where('messages.doctor_id',$user['id'])
-				->where('doctor_seen','N');				
+				->where('doctor_seen','N');
 		}
-
+		$sql = $messages->toSql();
 		$messages = $messages->get();
 		$unseenmessages = $unseenmessages->get();
 		foreach($messages as $message){
@@ -143,7 +145,6 @@ class ChatController{
 				}
 			}
 		}
-
 		$this->response['status'] = true;
 		$this->response['data'] = $messages;
 
@@ -155,6 +156,7 @@ class ChatController{
 		$userType = $body['userType'];
 
 		$Utils = new Utils();
+
 		$user = ($userType == 'patient') ? $Utils->getPatientFromBearerToken($req, $this->container) : $Utils->getUserFromBearerToken($req, $this->container);
 
 		$message = MessagesModel::select('message_from','message');
@@ -162,10 +164,16 @@ class ChatController{
 			$message = $message
 				->where('patient_id', $user['id'])
 				->where('doctor_id',$receiverid);
+			MessagesModel::where('patient_id', $user['id'])
+				->where('doctor_id',$receiverid)
+				->update(array('patient_seen' => 'Y'));	
 		}else{
 			$message = $message
 				->where('patient_id', $receiverid)
 				->where('doctor_id', $user['id']);
+			MessagesModel::where('doctor_id', $user['id'])
+				->where('patient_id',$receiverid)
+				->update(array('doctor_seen' => 'Y'));
 		}
 		$message = $message->get();
 		$this->response['status'] = true;
@@ -179,12 +187,15 @@ class ChatController{
 			'patient_id' => $body['senderid'],
 			'doctor_id' => $body['receiverid'],
 			'message' => $body['message'],
-			'message_from' => $body['usertype']
+			'message_from' => $body['usertype'],
+			'patient_seen' => 'Y'
+
 		) : array(
 			'patient_id' => $body['receiverid'],
 			'doctor_id' => $body['senderid'],
 			'message' => $body['message'],
-			'message_from' => $body['usertype']
+			'message_from' => $body['usertype'],
+			'doctor_seen' => 'Y'
 		);
 
 		MessagesModel::create($send);

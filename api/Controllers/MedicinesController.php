@@ -283,7 +283,7 @@ class MedicinesController{
 		return $this->container->response->withJson($this->response);
 	}
 	public function medicineInstructions($req, $res, $args){
-		$medicineName = $args['medicinename'];
+		$medicineName = $_GET['medicine'];
 		$instruction = MedicinesModel::select("instructions")->whereRaw('concat(brandname,":",genericname) = "'.$medicineName.'"')->first();
 		
 		return $this->container->response->withJson($instruction['instructions']);
