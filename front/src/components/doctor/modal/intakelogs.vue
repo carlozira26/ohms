@@ -1,5 +1,5 @@
 <template>
-	<v-dialog v-model="dialog" content-class="intakelogs">
+	<v-dialog v-model="medicinelogs" content-class="intakelogs">
 		<v-card max-height="320px" min-height="373px" style="overflow:auto">
 			<v-card-title primary-title class="green darken-4 white--text">
 				<h2>Intake Logs</h2>
@@ -8,7 +8,7 @@
 				<v-layout row wrap>
 					<v-flex class="text-md-left">
 						<table style="width:100%;border-collapse:collapse">
-							<tr>
+							<tr v-if="logs.length > 0">
 								<td width="50%" style="padding:3px">
 									<table>
 										<tr v-for="(log,index) in logs" v-bind:key="index">
@@ -24,6 +24,11 @@
 									</table>
 								</td>
 							</tr>
+							<tr v-else>
+								<td class="text-center">
+									<h4>No Logs Found!</h4>
+								</td>
+							</tr>
 						</table>
 					</v-flex>
 				</v-layout>
@@ -34,20 +39,20 @@
 <script>
 	import axios from "axios";
 	export default {
-		mounted: function(){
+		created: function(){
 			this.eventHub.$on('viewLogs', val => {
-				this.dialog = true;
-				this.getLogs();
+				this.getLogs(val.patientID);
 			});
 		},
 		data: function(){
 			return{
-				dialog : false,
+				medicinelogs : false,
 				logs : [],
 			}
 		}, 
 		methods : {
-			getLogs : function(){
+			getLogs : function(id){
+				this.medicinelogs = true;
 				let _this = this;
 				axios.create({
 					baseURL : this.apiUrl,
@@ -55,10 +60,9 @@
 						'Authorization' : `Bearer ${this.token}`
 					}
 				})
-				.get('/patient/medicinelogs')
+				.get('/patient/medicinelogs?id='+id)
 				.then(function(res){
 					_this.logs = res.data.data;
-					console.log(_this.logs);
 				})
 			}
 		}

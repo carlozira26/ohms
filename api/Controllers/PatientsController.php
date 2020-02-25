@@ -47,11 +47,10 @@ class PatientsController{
 					"mobilenumber" => $body['mobilenumber'],
 					"drtb" => $body['drtb'],
 					"address" => ucwords(strtolower($body['address'])),
-					"remarks" => $body['remarks'],
+					"remarks" => (!empty($body['remarks']) && $body['remarks'] != 'undefined') ? $body['remarks'] : NULL,
 					"username" => $body['username'],
 					"password" => $password,
-					"token" => $token
-				));
+					"token" => $token));
 				$this->response['status'] = true;
 				$this->response['message'] = "Successfully Created";
 			}
@@ -246,7 +245,16 @@ class PatientsController{
 			return $error;
 		}
 	}
+	public function checkLaboratory($req, $res, $args){
+		$id = $args['id'];
+		$res = DiagnosticLogsModel::where('patient_id',$id)->first();
+		
+		if($res){
+			$this->response['status'] = true;
+		}
 
+		return $this->container->response->withJson($this->response);
+	}
 	public function fetchPatientFile($req, $res, $args){
 		$examType = array("Sputum Examination","CXR Examination","TST Examination", "Other Examination Result");
 		$examList = 
@@ -326,9 +334,8 @@ class PatientsController{
 	}
 
 	public function fetchIntakeLogs($req, $res, $args){
-		$Utils = new Utils();
-		$user = $Utils->getPatientFromBearerToken($req, $this->container);
-		$log = PatientIntakeModel::where('patient_id',$user['id'])->get();
+		$id = $_GET['id'];
+		$log = PatientIntakeModel::where('patient_id',$id)->get();
 		if(count($log) > 0){
 			$this->response['data'] = $log;
 			$this->response['status'] = true;
@@ -350,11 +357,15 @@ class PatientsController{
 		for($x=0; $x < $ddiff->format('%m') +1 ; $x++){
 			array_unshift($monthlist,date('M',strtotime($today." -".$x." month")));
 		}
+		$arraylist = array();
+		for($x=0; $x<count($monthlist);$x++){
+			array_push($arraylist,0);
+		}
 		$arrstat = array(
-			'New' => array(0,0,0,0,0,0,0,0,0,0,0,0),
-			'Ongoing' => array(0,0,0,0,0,0,0,0,0,0,0,0),
-			'Success' => array(0,0,0,0,0,0,0,0,0,0,0,0),
-			'Discontinuation' => array(0,0,0,0,0,0,0,0,0,0,0,0)
+			'New' => $arraylist,
+			'Ongoing' => $arraylist,
+			'Success' => $arraylist,
+			'Discontinuation' => $arraylist
 		);
 
 		$patientlistqry = PatientLogsModel::selectRaw("uid,status,cast(created_at as date) as date")

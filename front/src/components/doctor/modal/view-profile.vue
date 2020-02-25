@@ -13,13 +13,13 @@
 						<v-divider class="mb-2 mt-2"></v-divider>
 						<v-layout row wrap>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="First Name" :rules="[formRules.required]" v-model="firstName" type="text"/>
+								<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="firstName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]" v-model="middleName" type="text"/>
+								<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="middleName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]" v-model="lastName" type="text"/>
+								<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="lastName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md6 class="pa-1">
 								<v-text-field label="Username" type="text" v-model="username" :rules="[formRules.required]"/>

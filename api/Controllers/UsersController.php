@@ -43,12 +43,13 @@ class UsersController{
 	
 	public function UserAuth($request, $response, $args){
 		$body = $request->getParsedBody();
-		$usertype = $body['usertype'];
-		if($usertype == 'doctor'){
-			$user = $this->authenticateEmailPassword($body['email'], $body['password']);
+		$username = $body['username'];
+		$usertype = "";
+		if(strpos($username,'@') && strpos($username,'.com')){
+			$user = $this->authenticateEmailPassword($username, $body['password']);
 			$role = $user->usertype;
 		}else{
-			$user = $this->authenticateUsernamePassword($body['username'], $body['password']);
+			$user = $this->authenticateUsernamePassword($username, $body['password']);
 			$role = "none";
 		}
 		

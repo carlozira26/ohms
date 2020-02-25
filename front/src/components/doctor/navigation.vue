@@ -203,7 +203,7 @@ export default {
 			this.eventHub.$emit('viewMessage', { 'wsconnect' : this.wsconnect});
 		},
 		openLogs : function(){
-			this.eventHub.$emit('viewLogs', true);
+			this.eventHub.$emit('viewLogs', {'patientID' : this.user.id});
 		},
 	}
 };	

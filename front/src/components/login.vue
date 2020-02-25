@@ -2,22 +2,19 @@
 	<v-container fluid fill-height>
 		<v-toolbar color="green darken-4" dark app fixed>
 			<v-toolbar-title class="ml-0 pl-3"><h2>OHMS</h2></v-toolbar-title>
+			<v-spacer></v-spacer>
+			<v-btn large flat round class="font-weight-regular white--text green darken-4" @click="changeTitle('patient')">Login</v-btn>
 		</v-toolbar>
 		<div class="div-block bg"></div>
 		<v-layout align-center justify-center>
 			<v-flex xs12 sm12 md6>
-				<v-container style="margin-top:30%">
+				<v-container style="margin-top:20%">
 					<div class="title">
 						<h1 class="font-weight-regular display-3">Online Healthcare Monitoring System</h1>
 					</div>
 					<br>
 					<div class="subtitle">
-						<h4 class="font-weight-light">The doctor's motto : Have Patients.</h4>
-					</div>
-					<br>
-					<div class="text-uppercase">
-						<v-btn large class="font-weight-regular white--text green darken-4" @click="changeTitle('patient')">I'm Patient</v-btn>
-						<v-btn large class="font-weight-regular white--text green darken-4" @click="changeTitle('doctor')">I'm Doctor</v-btn>
+						<h4 class="font-weight-light">The doctor's motto : Accept Patients.</h4>
 					</div>
 				</v-container>
 			</v-flex>
@@ -30,12 +27,8 @@
 					</v-card-title>
 					<v-card-text>
 						<h3 class="subheading red--text text-xs-center" v-if="isInvalildCredential"><v-icon color="red">error_outline</v-icon> Invalid Credentials</h3>
-
-						<template v-if="usertype == 'doctor'">
-							<v-text-field solo prepend-icon="person" label="Email" v-model="email" type="text"></v-text-field>
-						</template>
 						<template v-else>
-							<v-text-field solo prepend-icon="person" label="Username" v-model="username" type="text"></v-text-field>
+							<v-text-field solo prepend-icon="person" label="Username / Email" v-model="username" type="text"></v-text-field>
 						</template>
 
 						<v-text-field solo prepend-icon="lock" @click:append="showHide = !showHide" v-model="password" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" label="Password"></v-text-field>
@@ -67,9 +60,7 @@
 				dialog: false,
 				title : "",
 				showHide: false,
-				usertype: "",
 				
-				email : null,
 				username: null,
 				password : null,
 
@@ -80,25 +71,14 @@
 		methods: {
 			changeTitle : function(user){
 				this.dialog = true; 
-				if(user == 'patient'){
-					this.usertype = "patient";
-					this.title = "Hello Patient, Good day! Please input your account";
-				}else{
-					this.usertype = "doctor";
-					this.title = "Hello Doctor, Good day! Please input your account";
-				}
+				this.title = "Login to OHMS";
 			},
 			accountLogin : function(){
 				if( this.$refs.vForm.validate() ){
 					let _this = this,
 					formData = new FormData();
 
-					if(_this.usertype == 'doctor'){
-						formData.append("email", _this.email);
-					}else{
-						formData.append("username", _this.username);
-					}
-					formData.append("usertype", _this.usertype);
+					formData.append("username", _this.username);
 					formData.append("password", _this.password);
 
 					axios.post(_this.apiUrl + '/users/login', formData)

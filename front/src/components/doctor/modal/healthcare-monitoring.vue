@@ -1,8 +1,8 @@
 <template>
 	<v-dialog v-model="healthtracker" width="80%">
 		<v-card>
-			<v-card-title primary-title>
-				<h1 class="green--text">Healthcare Monitoring</h1>
+			<v-card-title primary-title class="green darken-4">
+				<h1 class="white--text">Healthcare Monitoring</h1>
 			</v-card-title>
 			<v-card-text>
 				

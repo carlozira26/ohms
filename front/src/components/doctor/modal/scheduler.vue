@@ -1,13 +1,13 @@
 <template>
 	<v-dialog v-model="medscheduler" width="60%">
-		<v-card>
+		<v-card style="overflow:auto">
 			<v-card-title primary-title>
 				<h1 class="green--text">Scheduler</h1>
 			</v-card-title>
 			<v-divider></v-divider>
 			<v-card-text>
 				<v-layout row wrap>
-					<v-flex xs12 md8>
+					<v-flex xs12 sm12 md8>
 						<v-date-picker
 							full-width
 							landscape
@@ -26,12 +26,23 @@
 							<div class="text-xs-center" v-if="prescribedMedicine == 0">
 								<h4 class="red--text">No Medicine Found</h4>
 							</div>
-							<ul v-else v-for="(timeintake,index) in prescribedMedicine" :key="index">
-								<li class="font-weight-bold">{{timeintake.time}}</li>
-								<ul v-for="(medicine,index) in timeintake.medicine" :key="index">
-									<li class="font-italic">{{ medicine }}</li>
-								</ul>
-							</ul>
+							
+							<template v-else v-for="(timeintake,index) in prescribedMedicine">
+                                <v-list dense two-line subheader :key="index">
+                                    <v-subheader class="font-weight-bold">{{timeintake.time}}</v-subheader>
+                                </v-list>
+                                <template v-for="(medicine,i) in timeintake.medicine">
+                                    <v-list dense :key="`medicine-${index}-${i}`">
+                                        <v-list-tile>
+                                            <v-list-tile-action>
+                                                <v-checkbox @change="takeMedicine(index,i,medicine)" v-model="medicine.selected"></v-checkbox>
+                                            </v-list-tile-action>
+                                            {{medicine}}
+                                        </v-list-tile>
+                                    </v-list>
+                                </template>
+                                <v-divider :key="`divider-${index}`"></v-divider>
+                            </template>
 						</div>
 					</v-flex>
 				</v-layout>
@@ -62,9 +73,62 @@ import axios from 'axios';
 
 				medicineSchedule: [],
 				prescribedMedicine : [],
+				todaysMedicine : [],
+				checkedMedicines : []
 			}
 		},
 		methods : {
+			todaysCheckList : function(){
+				this.todaysMedicine = [];
+				let _this = this,
+				datelist = [],
+				val = [],
+				y = 0,
+				instr = "";
+				Object.keys(_this.medicineSchedule).forEach(function (key) {
+					datelist.push(key);
+				});
+
+				if(datelist.includes(_this.today)){
+					Object.keys(_this.medicineSchedule[_this.today]).sort().forEach(async function(key) {
+						let list = [];
+						for(let medicine in _this.medicineSchedule[_this.today][key]){ // tagged
+							let sel = false;
+							if(_this.checkedMedicines.length > 0){
+								if(_this.checkedMedicines[y] == "Y"){
+									sel = true;
+								}
+								list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
+							}else{
+								val.push("N"),
+								list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
+							}
+							y = y+1;
+						}
+						_this.todaysMedicine.push({
+							time : key,
+							medicine : list,
+						});
+					});
+					if(_this.checkedMedicines.length == 0){
+						_this.checkedMedicines = val;
+					}
+				}
+			},
+			takeMedicine : function(index, i,medicinename){
+				this.checkedMedicines = [];
+				for(let timetake in this.todaysMedicine){
+					console.log(this.todaysMedicine[timetake]);
+					for(let med in this.todaysMedicine[timetake].medicine){
+						let val = "N";
+						if(this.todaysMedicine[timetake].medicine[med].selected == true){
+							val = "Y";
+						}
+						this.checkedMedicines.push(val);
+					}
+				}
+				// this.newMedicineVal('update', medicinename);
+			},
 			fetchMedicineSchedule : function(id){
 				let _this = this;
 				axios.create({
@@ -98,7 +162,23 @@ import axios from 'axios';
 						x++;
 					});
 				}
-			}
+			},
+			getMedicineVal : function(){
+				let _this = this;
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/medicine/value')
+				.then(function(res){
+					if(res.data.status){
+						_this.checkedMedicines = res.data.data.intake_value.split(",");
+					}
+					_this.todaysCheckList();
+				});
+			},
 		}
 	};
 </script>

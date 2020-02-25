@@ -146,7 +146,6 @@ export default {
         diagnosis : ["Sputum Result", "CXR Result", "TST Result", "Other Examination Result"],
         today: new Date().toISOString().substr(0, 10),
         open : [],
-        dateeee : new Date().toISOString(),
         model : "",
         url : "",
         files: {
@@ -189,7 +188,6 @@ export default {
                 _this.diagnosticLogs = res.data;
             });
         },
-
         fetchMedicineSchedule : function(id){
             let _this = this;
             axios.create({

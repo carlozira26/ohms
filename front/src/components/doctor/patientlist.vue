@@ -116,6 +116,13 @@
 														<v-list-tile-title>Add Medicine</v-list-tile-title>
 													</v-list-tile>
 
+													<v-list-tile @click="openModal('viewLogs',patient.id)">
+														<v-list-tile-avatar>
+															<v-icon>fa fa-history</v-icon>
+														</v-list-tile-avatar>
+														<v-list-tile-title>Intake History</v-list-tile-title>
+													</v-list-tile>
+
 													<v-list-tile @click="openModal('',patient.id)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-archive</v-icon>
@@ -153,13 +160,13 @@
 							<v-divider class="mb-2 mt-2"></v-divider>
 							<v-layout row wrap>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="First Name" :rules="[formRules.required]" v-model="firstName" type="text"/>
+									<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="firstName" type="text"/>
 								</v-flex>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]" v-model="middleName" type="text"/>
+									<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="middleName" type="text"/>
 								</v-flex>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]" v-model="lastName" type="text"/>
+									<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="lastName" type="text"/>
 								</v-flex>
 								<v-flex xs12 md6 class="pa-1">
 									<v-text-field label="Username" type="text" v-model="username" :rules="[formRules.required]"/>
@@ -254,6 +261,7 @@
 	<view-medicine></view-medicine>
 	<assign-doctor></assign-doctor>
 	<lab-results></lab-results>
+	<intake-logs></intake-logs>
 	
 	</div>
 </template>
@@ -266,6 +274,7 @@
 	import viewMedicine from './modal/view-medicine.vue';
 	import assignDoctor from './modal/assign-doctor.vue';
 	import labResults from './modal/lab-results.vue';
+	import intakeLogs from './modal/intakelogs.vue';
 	export default {
 		components : {
 			'health-tracker' : healthTracker,
@@ -273,6 +282,7 @@
 			'add-medicine' : addMedicine,
 			'view-medicine' : viewMedicine,
 			'assign-doctor' : assignDoctor,
+			'intake-logs' : intakeLogs,
 			'lab-results' : labResults,
 		},
 		watch : {

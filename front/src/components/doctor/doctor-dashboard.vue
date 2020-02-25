@@ -60,11 +60,12 @@
 	</div>
 </template>
 <script>
-	import ApexCharts from 'vue-apexcharts';
+	import VueApexCharts from 'vue-apexcharts';
+	import ApexCharts from "apexcharts";
 	import axios from 'axios';
 	export default {
 		components : {
-			'apexchart' : ApexCharts
+			'apexchart' : VueApexCharts
 		},
 		mounted : function(){
 			this.getInfected();
@@ -78,7 +79,7 @@
 				menu1 : false,
 				options: {
 					chart: {
-						id: 'Chart',
+						id: 'bargraphChart',
 						stacked: true,
 						toolbar : {
 							show : false,
@@ -98,14 +99,8 @@
 			}
 		},
 		methods : {
-			dateRange : async function(){
+			dateRange : function(){
 				let d1="",d2="";
-				this.ApexCharts.exec("Chart", "updateOptions", {
-					xaxis: {
-					categories: ["A", "B", "C"]
-					}
-					});
-				this.options.xaxis.categories =[];
 				if(this.date1!=''){
 					d1 = new Date(this.date1).toDateString().substr(4);
 					this.date = d1+" ~ "+d2;
@@ -130,8 +125,21 @@
 					_this.pieSeries = res.data;
 				})
 			},
+			updateChart : async function(axis){
+				ApexCharts.exec("bargraphChart", "updateOptions",{
+					xaxis: {
+						categories: axis
+					}
+				});
+
+				ApexCharts.exec("bargraphChart", "updateSeries",[{
+					data: [32, 44, 31]
+				}])
+			},
 			getStatusOutcomes : function(){
-				let _this = this;
+				let _this = this,
+				axis = [];
+				_this.barSeries = [];
 				_this.series = [];
 				axios.create({
 					baseURL : this.apiUrl,
@@ -141,6 +149,7 @@
 				})
 				.get('/patients/outcomes?date='+_this.date)
 				.then(function(res){
+					_this.barSeries = res.data;
 					let x=0;
 					for(let i in res.data.data){
 						_this.series.push({
@@ -150,9 +159,10 @@
 					}
 					
 					for(let i in res.data.months){
-						_this.options.xaxis.categories.push(res.data.months[i]);
+						axis.push(res.data.months[i]);
 					}
 				})
+				this.updateChart(axis);
 			}
 		},
 	};

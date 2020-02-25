@@ -28,8 +28,8 @@ export default {
         return {
             cookieKey : 'ohmscookiekey',
             // apiUrl : 'http://jru-ohms.000webhostapp.com/api',
-            apiUrl : 'http://localhost/ohms/api',
             // apiUrl : 'http://122.53.152.8/ohms/api',
+            apiUrl : 'http://localhost/ohms/api',
             websocket : 'ws://122.53.152.8:3552/',
             token : '',
             eventHub: eventHub,
@@ -43,13 +43,17 @@ export default {
                     return pattern.test(value) || 'Invalid e-mail.'
                 },
                 phoneNumber : value => {
-                    const pattern = /^(\+639)\d{9}$/g
-                    return pattern.test(value) || 'Should be +639xxxxxxxxx';
+                    const pattern = /^(09|\+639)\d{9}$/g
+                    return pattern.test(value) || 'Should be 09xxxxxxxxx/+639xxxxxxxxx';
                 },
                 requiredGreterThanZero : value => {
                     const pattern = /^[1-9]\d*$/
                     return pattern.test(value) || 'Required';
                 },
+                textOnly : value => {
+                    const pattern = (/^[A-Za-z ]+$/)
+                    return pattern.test(value) || 'Please use letters only';  
+                }
             },
             globalLoading : false,
             wsconnect : '' 
