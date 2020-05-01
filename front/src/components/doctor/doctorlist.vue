@@ -66,71 +66,70 @@
 				</v-card>
 			</v-flex>
 		</v-layout>
-		<v-dialog width="700" v-model="doctorAccountModal">
+		<v-dialog width="700" v-model="doctorAccountModal" scrollable>
 			<v-card>
-				<v-form ref="vForm" v-on:submit.prevent="submitDoctorAccount">
-					<v-card-title primary-title class="green darken-4 white--text">
-						<h1>{{ title }}</h1>
-					</v-card-title>
-					<v-card-text>
+				<v-card-title primary-title class="green darken-4 white--text">
+					<h1>{{ title }}</h1>
+				</v-card-title>
+				<v-card-text>
+					<v-form ref="vForm" v-on:submit.prevent="submitDoctorAccount">
 						<v-layout row wrap>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="First Name" :rules="[formRules.required]" v-model="firstName" type="text"/>
+								<v-text-field label="First Name" :rules="[formRules.required]" v-model="profile.firstName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Middle Name" :rules="[formRules.required]" v-model="middleName" type="text"/>
+								<v-text-field label="Middle Name" :rules="[formRules.required]" v-model="profile.middleName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Last Name" :rules="[formRules.required]" v-model="lastName" type="text"/>
+								<v-text-field label="Last Name" :rules="[formRules.required]" v-model="profile.lastName" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
 								<template>
 									<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
 										<template v-slot:activator="{ on }">
-											<v-text-field label="Date of Birth" readonly v-on="on" v-model="dateofBirth" @change="save" type="text" :rules="[formRules.required]"/>
+											<v-text-field label="Date of Birth" readonly v-on="on" v-model="profile.dateofBirth" @change="save" type="text" :rules="[formRules.required]"/>
 										</template>
-										<v-date-picker color="green darken-4" ref="picker" v-model="dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
-											<v-btn @click="menu = false" dark block>Close</v-btn>
+										<v-date-picker color="green darken-4" ref="picker" v-model="profile.dateofBirth" :max="new Date().toISOString().substr(0, 10)" @input="menu = false,changeDOB()" min="1950-01-01">
 										</v-date-picker>
 									</v-menu>
 								</template>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="doctorsgender" type="text"/>
+								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="profile.doctorsgender" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="mobileNumber" type="text"/>
+								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="profile.mobileNumber" type="text"/>
 							</v-flex>
 							<v-flex xs12 md6 class="pa-1">
-								<v-text-field label="Email" :rules="[formRules.email]" v-model="email" type="text"/>
+								<v-text-field label="Email" :rules="[formRules.email]" v-model="profile.email" type="text"/>
 							</v-flex>
 							<v-flex xs12 md6 class="pa-1">
-								<v-text-field label="Default Password (Birth Date)" v-model="password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
+								<v-text-field label="Default Password (Birth Date)" v-model="profile.password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
 							</v-flex>
 							<template v-if="isadmin == true"></template>
 							<template v-else>
 								<v-flex xs12 md6 class="pa-1">
-									<v-text-field label="License Number" v-model="license" type="text"/>
+									<v-text-field label="License Number" v-model="profile.license" :rules="[formRules.licenseNumber]" type="text"/>
 								</v-flex>
 								<v-flex xs12 md6 class="pa-1">
-									<v-text-field label="Specialization" v-model="specialization" type="text"/>
+									<v-select label="Specialization" :items="specializationList" item-text="type" v-model="profile.specialization"/>
 								</v-flex>
 								<v-flex xs12 md12 class="pa-1">
-									<v-text-field label="Clinic Name" v-model="clinicName" type="text"/>
+									<v-text-field label="Clinic Name" v-model="profile.clinicName" type="text"/>
 								</v-flex>
 								<v-flex xs12 md12 class="pa-1">
-									<v-text-field label="Clinic Address" v-model="clinicAddress" type="text"/>
+									<v-text-field label="Clinic Address" v-model="profile.clinicAddress" type="text"/>
 								</v-flex>
 							</template>
 						</v-layout>
-					</v-card-text>
-					<v-card-actions class="pa-3">
-						<v-checkbox label="Is Admin" v-model="isadmin"></v-checkbox>
-						<v-spacer></v-spacer>
-						<v-btn large flat @click="submitDoctorAccount(formType)" v-if="formType == 'add'">Submit</v-btn>
-						<v-btn large flat @click="doctorAccountModal=false">Cancel</v-btn>
-					</v-card-actions>
-				</v-form>
+					</v-form>
+				</v-card-text>
+				<v-card-actions class="pa-3">
+					<v-checkbox label="Is Admin" v-model="isadmin"></v-checkbox>
+					<v-spacer></v-spacer>
+					<v-btn large flat @click="submitDoctorAccount(formType)" v-if="formType == 'add'">Submit</v-btn>
+					<v-btn large flat @click="doctorAccountModal=false">Cancel</v-btn>
+				</v-card-actions>
 			</v-card>
 		</v-dialog>
 		<v-snackbar v-model="sbar" :color="snackBarColor" right top>
@@ -144,18 +143,11 @@
 	import VueCookies from "vue-cookies";
 	import axios from "axios";
 	export default {
-		watch : {
-			dateofBirth : function(){
-				if(this.dateofBirth){
-					this.password = this.dateofBirth.split("-").join("");
-					this.age = this.getBirthAge(this.dateofBirth);
-				}
-			},
-		},
 		created : function(){
 			this.token = VueCookies.get(this.cookieKey).token;
 			this.role = VueCookies.get(this.cookieKey).data.role;
 			this.loadDoctors();
+			this.getSpecializations();
 			if(this.role == 'none'){
 				this.$router.push('/dashboard');
 			}else if(this.role == '2'){
@@ -180,6 +172,9 @@
 				formType : "",
 
 				doctorsList : [],
+				specializationList : [],
+
+				profile : [],
 
 				firstName : "",
 				middleName : "",
@@ -193,12 +188,33 @@
 				mobileNumber : "",
 				clinicName : null,
 				clinicAddress : null,
+
 				isadmin:false
 			}
 		},
 		methods : {
+			changeDOB : function(){
+				if(this.profile.dateofBirth){
+					this.profile.password = this.profile.dateofBirth.split("-").join("");
+					this.profile.age = this.getBirthAge(this.profile.dateofBirth);
+				}
+			},
 			save : function(date) {
+				console.log(date);
 				this.$refs.menu.save(date);
+			},
+			getSpecializations(){
+				let _this = this;
+				axios.create({
+					baseURL : _this.apiUrl,
+					headers	 : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/users/specializations')
+				.then(function(res){
+					_this.specializationList = res.data;
+				})
 			},
 			doctorModal(type,index) {
 				this.formType = type;
@@ -206,18 +222,19 @@
 					this.title = "Add New Doctor";
 					this.$refs.vForm.reset();
 				}else{
+					this
 					this.title = "Doctor Information";
-					this.firstName = this.doctorsList[index].firstname;
-					this.middleName = this.doctorsList[index].middlename;
-					this.lastName = this.doctorsList[index].lastname;
-					this.dateofBirth = this.doctorsList[index].birthdate;
-					this.license = (this.doctorsList[index].licensenumber) ? this.doctorsList[index].licensenumber : "N/A";
-					this.specialization = (this.doctorsList[index].specialization) ? this.doctorsList[index].specialization : "N/A";
-					this.doctorsgender = this.doctorsList[index].gender;
-					this.email = (this.doctorsList[index].email) ? this.doctorsList[index].email : "N/A";
-					this.mobileNumber = this.doctorsList[index].contact_number;
-					this.clinicName = (this.doctorsList[index].clinic_name) ? this.doctorsList[index].clinic_name : "N/A";
-					this.clinicAddress = (this.doctorsList[index].clinic_address) ? this.doctorsList[index].clinic_address : "N/A";
+					this.profile.firstName = this.doctorsList[index].firstname;
+					this.profile.middleName = this.doctorsList[index].middlename;
+					this.profile.lastName = this.doctorsList[index].lastname;
+					this.profile.dateofBirth = this.doctorsList[index].birthdate;
+					this.profile.license = (this.doctorsList[index].licensenumber) ? this.doctorsList[index].licensenumber : "N/A";
+					this.profile.specialization = (this.doctorsList[index].specialization) ? this.doctorsList[index].specialization : "";
+					this.profile.doctorsgender = this.doctorsList[index].gender;
+					this.profile.email = (this.doctorsList[index].email) ? this.doctorsList[index].email : "N/A";
+					this.profile.mobileNumber = this.doctorsList[index].contact_number;
+					this.profile.clinicName = (this.doctorsList[index].clinic_name) ? this.doctorsList[index].clinic_name : "N/A";
+					this.profile.clinicAddress = (this.doctorsList[index].clinic_address) ? this.doctorsList[index].clinic_address : "N/A";
 				}
 				this.doctorAccountModal = true;
 			},
@@ -254,7 +271,7 @@
 				formData.append('isadmin',_this.isadmin);
 				if(this.$refs.vForm.validate()){
 					axios.create({
-						baseURL : _this.apiUrl,
+						baseURL : this.apiUrl,
 						headers : {
 							'Authorization' : `Bearer ${this.token}`
 						}

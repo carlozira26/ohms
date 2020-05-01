@@ -53,10 +53,14 @@ export default {
                 textOnly : value => {
                     const pattern = (/^[A-Za-z ]+$/)
                     return pattern.test(value) || 'Please use letters only';  
+                },
+                licenseNumber : value => {
+                    const pattern = /^[0-9]\d{6}$/g
+                    return pattern.test(value) || 'Should be 7 digit number';
                 }
             },
             globalLoading : false,
-            wsconnect : '' 
+            wsconnect : ''
         }
     }, 
     methods : {

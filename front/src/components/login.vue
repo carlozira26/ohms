@@ -27,10 +27,8 @@
 					</v-card-title>
 					<v-card-text>
 						<h3 class="subheading red--text text-xs-center" v-if="isInvalildCredential"><v-icon color="red">error_outline</v-icon> Invalid Credentials</h3>
-						<template v-else>
-							<v-text-field solo prepend-icon="person" label="Username / Email" v-model="username" type="text"></v-text-field>
-						</template>
-
+						
+						<v-text-field solo prepend-icon="person" label="Username / Email" v-model="username" type="text"></v-text-field>
 						<v-text-field solo prepend-icon="lock" @click:append="showHide = !showHide" v-model="password" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" label="Password"></v-text-field>
 					</v-card-text>
 

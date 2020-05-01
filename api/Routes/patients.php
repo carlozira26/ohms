@@ -11,4 +11,5 @@ $app->get('/patients/diagnostic/file', 'PatientsController:fetchPatientFile');
 $app->get('/patients/infected', 'PatientsController:fetchInfected');
 $app->get('/patients/outcomes', 'PatientsController:fetchOutcomes');
 $app->get('/patient/laboratory/{id}', 'PatientsController:checkLaboratory');
+$app->get('/patient/count', 'PatientsController:countPatients');
 $app->get('/patient/medicinelogs', 'PatientsController:fetchIntakeLogs');

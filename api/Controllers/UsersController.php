@@ -2,6 +2,7 @@
 namespace Controllers;
 use Models\UsersModel;
 use Models\PatientsModel;
+use Models\SpecializationsModel;
 use \Firebase\JWT\JWT;
 
 class UsersController{
@@ -41,6 +42,11 @@ class UsersController{
 		->first();
 	}
 	
+	public  function SpecializationList($req, $res, $args){
+		$list = SpecializationsModel::orderBy('type','asc')->get();
+		return $this->container->response->withJson($list);
+	}
+
 	public function UserAuth($request, $response, $args){
 		$body = $request->getParsedBody();
 		$username = $body['username'];
@@ -173,8 +179,7 @@ class UsersController{
 			->offset($offset)
 			->limit($limit);
 		}
-		$doctorList = $doctorList
-			->get();
+		$doctorList = $doctorList->get();
 		$doctorCount = $doctorCount->first();
 
 		$this->response['count'] = $doctorCount;

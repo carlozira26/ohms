@@ -123,7 +123,7 @@
 														<v-list-tile-title>Intake History</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('',patient.id)">
+													<v-list-tile @click="openModal('archivePatient',patient.id)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-archive</v-icon>
 														</v-list-tile-avatar>

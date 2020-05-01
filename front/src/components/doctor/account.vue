@@ -43,10 +43,10 @@
 								</v-flex>
 								<template v-if="role == 2">
 									<v-flex xs12 md6 class="pa-1">
-										<v-text-field label="License Number" v-model="userData.licensenumber" type="text"/>
+										<v-text-field label="License Number" v-model="userData.licensenumber" :rules="[formRules.licenseNumber]" type="text"/>
 									</v-flex>
 									<v-flex xs12 md6 class="pa-1">
-										<v-text-field label="Specialization" v-model="userData.specialization" type="text"/>
+										<v-select label="Specialization" :items="specializationList" item-text="type" v-model="userData.specialization" type="text"/>
 									</v-flex>
 									<v-flex xs12 md6 class="pa-1">
 										<v-text-field label="Clinic Name" v-model="userData.clinic_name" type="text"/>
@@ -55,19 +55,6 @@
 										<v-text-field label="Clinic Adress" v-model="userData.clinic_address" type="text"/>
 									</v-flex>
 								</template>
-							</v-layout>
-							<h1 class="text-xs-left grey--text">Credential</h1>
-							<v-divider class="mb-2 mt-2"></v-divider>
-							<v-layout row wrap>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Email" type="text" v-model="userData.email" :rules="[formRules.email]"/>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Password" v-model="password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'"/>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Confirm Password" v-model="matchPassword" @click:append="showHide1 = !showHide1" :error-messages="errorMsg" @keyup="matchingPassword" :type="showHide1 ? 'text' : 'password'" :append-icon="showHide1 ? 'visibility' : 'visibility_off'"/>
-								</v-flex>
 							</v-layout>
 						</v-form>
 					</v-card-text>
@@ -128,11 +115,14 @@
 			if(this.role == 'none'){
 				this.$router.push('/dashboard');
 			}
+			this.getSpecializations();
 			this.getAccount();
 		},
 		data : function(){
 			return {
 				userData : [],
+				specializationList : [],
+				
 				age: 0,
 				menu : false,
 				sbar: false,
@@ -154,6 +144,19 @@
 			}
 		},
 		methods : {
+			getSpecializations : function(){
+				let _this = this;
+				axios.create({
+					baseURL : _this.apiUrl,
+					headers	 : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/users/specializations')
+				.then(function(res){
+					_this.specializationList = res.data;
+				})
+			},
 			getAccount : function(){
 				let _this = this;
 				axios.create({
@@ -224,13 +227,6 @@
 					_this.sbar = true;
 				}
 			},
-			matchingPassword : function(){
-				if(this.password != this.matchPassword){
-					this.errorMsg = "Password doesn't match!";
-				}else{
-					this.errorMsg = "";
-				}
-			},
 			saveChanges : function(){
 				let _this = this,
 				formData = new FormData();
@@ -245,10 +241,6 @@
 				formData.append('specialization', _this.userData.specialization);
 				formData.append('clinic_name',_this.userData.clinic_name);
 				formData.append('clinic_address',_this.userData.clinic_address);
-				formData.append('email',_this.userData.email);
-				if(_this.password != ""){
-					formData.append('password',_this.password);
-				}
 				axios.create({
 					baseURL : _this.apiUrl,
 					headers : {

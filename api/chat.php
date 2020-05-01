@@ -37,7 +37,7 @@ class Api implements MessageComponentInterface {
         $this->clients->detach($conn);
     }
 
-    public function onError(ConnectionInterface $conn, \Exception $e) {
+    public function onError(ConnectionInterface $conn, Exception $e) {
         $conn->close();
     }
 }

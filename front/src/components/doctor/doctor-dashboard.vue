@@ -28,23 +28,27 @@
 						<v-layout row wrap>
 							<v-flex sm5 class="pa-1">
 								<v-card>
-									<v-card-title class="title">
-										Infected per Age Group
+									<v-card-title class="title white--text green darken-4">
+										Total Count 
 										<v-spacer></v-spacer>
-										<v-btn icon title="Download" small color="green darken-4"><v-icon color="white" small>file_download</v-icon></v-btn>
+										<download-excel :data="json_data" name="test.xls">
+											<v-btn icon title="Download" small color="green darken-4"><v-icon color="white">file_download</v-icon></v-btn>
+										</download-excel>
 									</v-card-title>
 									<v-divider></v-divider>
 									<v-card-text>
-										<apexchart type="pie" :options="pieOptions" :series="pieSeries"></apexchart>
+										<apexchart height="300em" type="bar" :options="barOptions" :series="barSeries"></apexchart>
 									</v-card-text>
 								</v-card>
 							</v-flex>
 							<v-flex sm7 class="pa-1">
 								<v-card>
-									<v-card-title class="title">
+									<v-card-title class="title white--text green darken-4">
 										Patient Status Outcomes Monthly
 										<v-spacer></v-spacer>
-										<v-btn icon title="Download" small color="green darken-4"><v-icon color="white" small>file_download</v-icon></v-btn>
+										<download-excel :data="json_data">
+											<v-btn icon title="Download" small color="green darken-4"><v-icon color="white">file_download</v-icon></v-btn>
+										</download-excel>
 									</v-card-title>
 									<v-divider></v-divider>
 									<v-card-text>
@@ -61,15 +65,20 @@
 </template>
 <script>
 	import VueApexCharts from 'vue-apexcharts';
+	import Vue from 'vue';
 	import ApexCharts from "apexcharts";
 	import axios from 'axios';
+	import JsonExcel from 'vue-json-excel';
+
 	export default {
 		components : {
-			'apexchart' : VueApexCharts
+			'apexchart' : VueApexCharts,
+			'downloadExcel' : JsonExcel
 		},
 		mounted : function(){
 			this.getInfected();
 			this.getStatusOutcomes();
+			this.getTotalCount();
 		},
 		data: function() {
 			return {
@@ -77,6 +86,18 @@
 				date1: "",
 				date2 : "",
 				menu1 : false,
+				barOptions: {
+					chart: {
+						id: 'bargraph',
+						stacked: false,
+						toolbar : {
+							show : false,
+						}
+					},
+					xaxis: {
+						categories: ["New","Ongoing","Success","Discontinuation"],
+					}
+				},
 				options: {
 					chart: {
 						id: 'bargraphChart',
@@ -90,12 +111,20 @@
 					}
 				},
 				series: [],
-
-				pieOptions : {
-					labels : ['17 below','18 to 25', '26 to 35','36 to 40','41 above']
-				},
-				pieSeries : [],
-				barSeries : []
+				barSeries : [],
+				json_data: [
+				// {
+				// 	'name': 'Tony Peña',
+				// 	'city': 'New York',
+				// 	'country': 'United States',
+				// 	'birthdate': '1978-03-15',
+				// },{
+				// 	'name': 'Thessaloniki',
+				// 	'city': 'Athens',
+				// 	'country': 'Greece',
+				// 	'birthdate': '1987-11-23',
+				// }
+				],
 			}
 		},
 		methods : {
@@ -107,7 +136,7 @@
 				} if (this.date2!='') {
 					d2 = new Date(this.date2).toDateString().substr(4);
 					this.date = d1+" ~ "+d2;
-					this.getInfected();
+					this.getTotalCount();
 					this.getStatusOutcomes();
 				}
 			},
@@ -131,15 +160,10 @@
 						categories: axis
 					}
 				});
-
-				ApexCharts.exec("bargraphChart", "updateSeries",[{
-					data: [32, 44, 31]
-				}])
 			},
 			getStatusOutcomes : function(){
 				let _this = this,
 				axis = [];
-				_this.barSeries = [];
 				_this.series = [];
 				axios.create({
 					baseURL : this.apiUrl,
@@ -149,7 +173,6 @@
 				})
 				.get('/patients/outcomes?date='+_this.date)
 				.then(function(res){
-					_this.barSeries = res.data;
 					let x=0;
 					for(let i in res.data.data){
 						_this.series.push({
@@ -163,7 +186,24 @@
 					}
 				})
 				this.updateChart(axis);
+			},
+			getTotalCount : async function(){
+				let _this = this;
+
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/patient/count?date='+_this.date)
+				.then(function(res){
+					ApexCharts.exec("bargraph", "updateSeries",[{
+						data: res.data.data
+					}]);
+				});
 			}
+
 		},
 	};
 

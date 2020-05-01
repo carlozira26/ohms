@@ -5,15 +5,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Capsule\Manager as DB;
 
 /**
- * Medicines Model
+ * Specializations Model
  */
-class DiagnosticLogsModel extends Model{
+class SpecializationsModel extends Model{
     // The table must be protected
-    protected $table = "diagnostic_logs";
+    protected $table = "specializations";
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "patient_id", "diagnostic_type", "result", "image_location", "remarks"
+    	"id", "type"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

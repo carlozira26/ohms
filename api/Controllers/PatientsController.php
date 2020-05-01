@@ -20,6 +20,33 @@ class PatientsController{
 		$this->container = $container;
 	}
 
+	public function countPatients($req, $res, $args){
+		$d = explode(" ~ ",$_GET['date']);
+		$datefrom = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
+		$dateto = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+
+		$patients = PatientsModel::select('status')->whereBetween('consultationdate', [$datefrom, $dateto])->get();
+		$arrstatus = array(0,0,0,0);
+
+		foreach($patients as $patient){
+			if($patient['status'] == 'New'){
+				$arrstatus[0] = $arrstatus[0]+1;
+			}else if($patient['status'] == 'Ongoing'){
+				$arrstatus[1] = $arrstatus[1]+1;
+			}else if($patient['status'] == 'Success'){
+				$arrstatus[2] = $arrstatus[2]+1;
+			}else{
+				$arrstatus[3] = $arrstatus[3]+1;
+			}
+		}
+		if($patients){
+			$this->response['data'] = $arrstatus;
+			$this->response['status'] = true;
+		}
+
+		return $this->container->response->withJson($this->response);
+	}
+
 	public function addEditPatient($request, $response, $args){
 		$body = $request->getParsedBody();
 		
@@ -214,6 +241,7 @@ class PatientsController{
 			'patient_id' => $body['patientid'],
 			'diagnostic_type' => $body['diagnostic'],
 			'result' => $body['result'],
+			'remarks' => $body['remarks'],
 			'image_location' => $imgpath	
 		));
 		$this->response['message'] = "Diagnostic result has been uploaded!";
@@ -278,7 +306,7 @@ class PatientsController{
 			);
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
-		$patientFile = DiagnosticLogsModel::select('diagnostic_type','image_location')->where('patient_id',$user['id'])->get();
+		$patientFile = DiagnosticLogsModel::select('diagnostic_type','image_location','remarks')->where('patient_id',$user['id'])->get();
 		$count = 0;
 		foreach($examType as $type){
 			foreach($patientFile as $file){
@@ -289,11 +317,11 @@ class PatientsController{
 						array_push($forCheck,$list['name']);
 					}
 					if(!in_array($file['diagnostic_type']."(".$filedate[1], $forCheck)){
-						array_push($examList[3]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1], "file" => "image", "location" => $file['image_location']));
+						array_push($examList[3]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1], "file" => "image", "location" => $file['image_location'], "remarks" => $file['remarks']));
 					}
 
 				}else if($type == $file['diagnostic_type']){
-					array_push($examList[$count]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1] ,"file" => "image", "location" => $file['image_location']));
+					array_push($examList[$count]['children'], array ("name" => $file['diagnostic_type']."(".$filedate[1] ,"file" => "image", "location" => $file['image_location'], "remarks" => $file['remarks']));
 				}
 			}
 			$count++;
@@ -428,5 +456,5 @@ class PatientsController{
 		$this->response['months'] = $monthlist;
 
 		return $this->container->response->withJson($this->response);
-	}
+	} 
 }

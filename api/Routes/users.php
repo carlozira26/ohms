@@ -7,3 +7,4 @@ $app->post('/users/activate/{id}', 'UsersController:AccountActivate');
 $app->get('/users/account/{id}', 'UsersController:UserAccount');
 $app->get('/users/doctor', 'UsersController:DoctorsList');
 $app->get('/users/doctor/account', 'UsersController:DoctorsListAccount');
+$app->get('/users/specializations', 'UsersController:SpecializationList');

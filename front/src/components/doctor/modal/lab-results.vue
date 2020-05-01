@@ -13,7 +13,7 @@
 							<span>Add Result</span>
 						</v-tooltip>
 					</v-card-title>
-					<v-card-text>
+					<v-card-text style="overflow:auto">
 						<table class="v-datatable v-table" style="border:1px solid #ddd">
 							<thead>
 								<tr class="grey lighten-4" style="border-bottom:1px solid #333">
@@ -37,7 +37,7 @@
 										<td>
 											<v-tooltip bottom>
 												<template v-slot:activator="{ on }">
-													<v-btn icon v-on="on" @click="checkFileIfExist(diagnosis.image_location)"><v-icon>fa-eye</v-icon></v-btn>
+													<v-btn icon v-on="on" @click="checkFileIfExist(diagnosis.image_location, diagnosis.remarks)"><v-icon>fa-eye</v-icon></v-btn>
 												</template>
 												<span>View Result</span>
 											</v-tooltip>
@@ -55,25 +55,29 @@
 			<v-form ref="vForm" v-on:submit.prevent="submitTestResult">
 				<v-card>
 					<v-card-text>
-						<v-layout row wrap>
-							<label>Diagnostic type:</label>
+						<v-layout row wrap class="text-sm-left">
 							<v-flex>
+							<label>Diagnostic type:</label>
 								<v-select solo :items="examinationType" v-model="diagnosticType" :rules="[formRules.required]"></v-select>
 							</v-flex>
 							<template v-if="diagnosticType == 'Other Diagnostic Test'">
-								<label>Please specify:</label>
 								<v-flex>
+									<label>Please specify:</label>
 									<v-text-field solo :rules="[formRules.required]" v-model="specific"></v-text-field>
 								</v-flex>
 							</template>
-							<label>Test Result:</label>
-								<v-flex>
-									<v-select solo :items="testType" v-model="result"></v-select>
-								</v-flex>
-							<label>File to upload:</label>
 							<v-flex>
+								<label>Test Result:</label>
+								<v-select solo :items="testType" v-model="result"></v-select>
+							</v-flex>
+							<v-flex>
+							<label>File to upload:</label>
 								<input type="file" ref="file" style="display: none" @change="imageSelect">
 								<v-text-field solo readonly v-model="image.name" label="Select an image..." @click="$refs.file.click()" :rules="[formRules.required]"></v-text-field>
+							</v-flex>
+							<v-flex>
+							<label >Remarks:</label>
+								<v-textarea solo v-model="remarks" :rules="[formRules.required]"></v-textarea>
 							</v-flex>
 							<v-flex>
 								<v-btn type="submit" class="green darken-4 white--text" block>Upload</v-btn>
@@ -84,10 +88,16 @@
 			</v-form>
 		</v-dialog>
 		<v-dialog v-model="viewResultImage" content-class="modalHeight">
-			<v-card>
-				<v-card-text>
-					<v-img :src="url"></v-img>
-				</v-card-text>
+			<v-card class="text-md-left">
+				<v-layout>
+                    <v-flex md8 xs12 style="overflow:auto">
+                        <v-img :src="url"></v-img>
+                    </v-flex>
+                    <v-flex md4 class="grey pa-2">
+                        <label><h3>Remarks:</h3></label>
+                        <p>{{remarks}}</p>
+                    </v-flex>
+                </v-layout>
 			</v-card>
 		</v-dialog>
 	</div>
@@ -118,6 +128,7 @@
 				specific: null,
 				result: 0,
 				image: [],
+				remarks: "",
 				diagnosticData : [],
 				url : '',
 				viewResultImage: false,
@@ -143,6 +154,7 @@
 				})
 				.get('/patients/diagnostic?patientid='+_this.patientID+'&page='+_this.pagination.page)
 				.then(function(res){
+					console.log(res);
 					_this.diagnosticData = res.data.data;
 					_this.pagination.length = Math.ceil(res.data.count.count / 8);
 				})
@@ -161,6 +173,7 @@
 					formData.append('patientid', this.patientID);
 					formData.append('result', this.result);
 					formData.append('imageFile', this.image, this.image.name);
+					formData.append('remarks', this.remarks);
 
 					axios.create({
 						baseURL : _this.apiUrl,
@@ -177,11 +190,12 @@
 					});
 				}
 			},
-			checkFileIfExist(file){
+			checkFileIfExist(file,remarks){
 				if(file != null){
 					var http = new XMLHttpRequest();
 					http.open('head', file, false);
 					http.send();
+					this.remarks = remarks;
 					if(http.status){
 						this.url = file;
 						this.viewResultImage = true;

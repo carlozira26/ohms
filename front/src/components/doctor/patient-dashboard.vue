@@ -65,12 +65,13 @@
                                                     <v-list dense :key="`medicine-${index}-${i}`">
                                                         <v-list-tile>
                                                             <v-list-tile-action>
-                                                                <template v-if="medicine.selected == false">
+                                                                <!-- <template v-if="medicine.selected == false">
                                                                     <v-checkbox @change="takeMedicine(index,i,medicine.name)" v-model="medicine.selected"></v-checkbox>
                                                                 </template>
                                                                 <template v-else>
                                                                     <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
-                                                                </template>
+                                                                </template> -->
+                                                                <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
                                                             </v-list-tile-action>
                                                             {{medicine.name}}
                                                             <v-spacer></v-spacer>
@@ -110,7 +111,7 @@
                                             <v-treeview class="text-xs-left" :open="open" item-key="name" open-on-click :items="diagnosticLogs">
                                                 <template slot-scope="{ item,open }" slot="label">
                                                     <a v-if="!item.file" class="black--text"><v-icon>{{ open ? 'fa-folder-open' : 'fa-folder' }}</v-icon> {{ item.name }}</a>
-                                                    <a v-else @click="viewImage(item.location)" class="black--text"><v-icon>{{item.file}}</v-icon> {{ item.name }}</a>
+                                                    <a v-else @click="viewImage(item.location,item.remarks)" class="black--text"><v-icon>{{item.file}}</v-icon> {{ item.name }}</a>
                                                 </template>
                                             </v-treeview>
                                         </v-card-text>
@@ -123,10 +124,16 @@
             </v-flex>
         </v-layout>
         <v-dialog v-model="viewResultImage" content-class="modalHeight">
-            <v-card>
-                <v-card-text>
-                    <v-img :src="url"></v-img>
-                </v-card-text>
+            <v-card class="text-md-left">
+                <v-layout>
+                    <v-flex md8 xs12 style="overflow:auto">
+                        <v-img :src="url"></v-img>
+                    </v-flex>
+                    <v-flex md4 class="grey pa-2">
+                        <label><h3>Remarks:</h3></label>
+                        <p>{{remarks}}</p>
+                    </v-flex>
+                </v-layout>
             </v-card>
         </v-dialog>
     </div>
@@ -148,6 +155,7 @@ export default {
         open : [],
         model : "",
         url : "",
+        remarks : "",
         files: {
             image: 'fa-file-image',
         },
@@ -164,11 +172,13 @@ export default {
         }
     },
     methods: {
-        viewImage : function(file){
+        viewImage : function(file,remarks){
+            this.remarks = "";
             if(file != null){
                 var http = new XMLHttpRequest();
                 http.open('head', file, false);
                 http.send();
+                this.remarks = remarks;
                 if(http.status){
                     this.url = file;
                     this.viewResultImage = true;
@@ -350,9 +360,6 @@ export default {
 .table td{border: 1px solid #ddd;padding: 8px;}
 .table tr:nth-child(even){background-color: #f2f2f2;}
 .table tr:hover {background-color: #ddd;}
-.modalHeight {
-    max-width: 50%;
-}
 @media only screen and (max-width: 600px){
     .modalHeight {
         max-width: 100%;

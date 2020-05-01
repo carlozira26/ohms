@@ -27,12 +27,28 @@
 						</v-list-tile-action>
 						<v-list-tile-title>Doctor's List</v-list-tile-title>
 					</v-list-tile>
-					<v-list-tile avatar active-class="highlighted green darken-2" class="v-list-item" to="/account">
-						<v-list-tile-action>
-							<v-icon>account_circle</v-icon>
-						</v-list-tile-action>
-						<v-list-tile-title>Account Settings</v-list-tile-title>
-					</v-list-tile>
+					<v-list-group>
+						<v-list-tile slot="activator">
+                            <v-list-tile-action>
+                                <v-icon>account_circle</v-icon>
+                            </v-list-tile-action>
+                            <v-list-tile-title>Account Settings</v-list-tile-title>
+                        </v-list-tile>
+                        <v-list-tile to="/account" active-class="highlighted green darken-2">
+                            <v-list-tile-content>
+                                <v-list-tile-title>
+                                    Account
+                                </v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile active-class="highlighted green darken-2" @click="openChangeCredential">
+                            <v-list-tile-content>
+                                <v-list-tile-title>
+                                    Change Credentials
+                                </v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
+					</v-list-group>
 					<v-list-tile avatar active-class="highlighted green darken-2" class="v-list-item" to="/logout">
 						<v-list-tile-action>
 							<v-icon>backspace</v-icon>
@@ -56,9 +72,6 @@
 				<v-spacer></v-spacer>
 				<v-btn flat icon @click="openMessage">
 					<v-badge left color="pink" title="Messages">
-						<!-- <template v-slot:badge>
-							<span>6</span>
-						</template> -->
 						<v-icon>fa-envelope</v-icon>
 					</v-badge>
 				</v-btn>
@@ -132,6 +145,7 @@
 		<view-profile></view-profile>
 		<view-message></view-message>
 		<view-logs></view-logs>
+		<view-change-credential></view-change-credential>
 	</div>
 </template>
 <script>
@@ -140,6 +154,7 @@ import openLogs from './modal/intakelogs.vue';
 // import axios from 'axios';
 import viewProfile from './modal/view-profile.vue';
 import viewMessage from './modal/messenger.vue';
+import viewChangeCredential from './modal/change-credential.vue';
 
 export default {
 	created : function(){
@@ -154,7 +169,8 @@ export default {
 	components : {
 		'view-profile' : viewProfile,
 		'view-message' : viewMessage,
-		'view-logs'    : openLogs
+		'view-logs'    : openLogs,
+		'view-change-credential' : viewChangeCredential,
 	},
 	data : () => ({
 		connect : '',
@@ -205,6 +221,9 @@ export default {
 		openLogs : function(){
 			this.eventHub.$emit('viewLogs', {'patientID' : this.user.id});
 		},
+		openChangeCredential : function(){
+			this.eventHub.$emit('showChangeCredentials', this.user.id);
+		}
 	}
 };	
 </script>
