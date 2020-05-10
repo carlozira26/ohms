@@ -70,6 +70,10 @@
 			<v-card>
 				<v-card-title primary-title class="green darken-4 white--text">
 					<h1>{{ title }}</h1>
+					<template v-if="formType=='edit'">
+						<v-spacer></v-spacer>
+						<v-btn flat class="white--text" outline round @click="openDoctorSchedule()">Schedule</v-btn>
+					</template>
 				</v-card-title>
 				<v-card-text>
 					<v-form ref="vForm" v-on:submit.prevent="submitDoctorAccount">
@@ -223,7 +227,8 @@
 					this.$refs.vForm.reset();
 				}else{
 					this
-					this.title = "Doctor Information";
+					this.title = "Doctor's Profile";
+					this.profile.id = this.doctorsList[index].id;
 					this.profile.firstName = this.doctorsList[index].firstname;
 					this.profile.middleName = this.doctorsList[index].middlename;
 					this.profile.lastName = this.doctorsList[index].lastname;
@@ -314,7 +319,10 @@
 					_this.sbar = true;
 					_this.loadDoctors();
 				})
-			}
+			},
+			openDoctorSchedule : function(){
+				this.eventHub.$emit('viewDoctorSchedule', { id: this.profile.id});
+			},
 		}
 	};
 </script>

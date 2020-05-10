@@ -20,6 +20,31 @@ class PatientsController{
 		$this->container = $container;
 	}
 
+	public function PatientProfile($req, $res, $args){
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$this->response['data'] = $user;
+		$this->response['status'] = true;
+
+		return $this->container->response->withJson($this->response);
+	}
+	public function PatientProfileSubmit($req, $res, $args){
+		$body = $req->getParsedBody();
+		$patient = PatientsModel::where('id',$body['id'])->update(array(
+			'firstname' => $body['firstname'],
+			'middlename' => $body['middlename'],
+			'lastname' => $body['lastname'],
+			'dateofbirth' => $body['dateofbirth'],
+			'mobilenumber' => $body['mobilenumber'],
+			'address' => $body['address']
+		));
+
+		if($patient){
+			$this->response['status'] = true;
+		}
+
+		return $this->container->response->withJson($this->response);
+	}
 	public function countPatients($req, $res, $args){
 		$d = explode(" ~ ",$_GET['date']);
 		$datefrom = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
@@ -39,6 +64,7 @@ class PatientsController{
 				$arrstatus[3] = $arrstatus[3]+1;
 			}
 		}
+		$this->response['date_range'] = date("M d, Y",strtotime($datefrom))." to ".date("M d, Y",strtotime($dateto));
 		if($patients){
 			$this->response['data'] = $arrstatus;
 			$this->response['status'] = true;
@@ -398,9 +424,12 @@ class PatientsController{
 
 		$patientlistqry = PatientLogsModel::selectRaw("uid,status,cast(created_at as date) as date")
 			->whereRaw('cast(created_at as date) between "'.$datefrom.'" and "'.$today.'"')
-			->orderBy('created_at')->get();
-		
-		foreach($patientlistqry as $patients){
+			->orderBy('created_at');
+		$patientlistqryget = $patientlistqry->get();
+		$patientlistqrysql = $patientlistqry->toSql();
+
+		$this->response['sql'] = $patientlistqrysql;
+		foreach($patientlistqryget as $patients){
 			$patientlist[$patients['uid']]['status'][] = $patients['status'];
 			$patientlist[$patients['uid']]['dates'][] = $patients['date'];
 		}
@@ -427,7 +456,6 @@ class PatientsController{
 					for($x=$successm-1; $x > ($successm - $diff) ; $x--){
 						$oldMonth =  date('Y-m-d', strtotime($patient['dates'][array_search('Success',$patient['status'])] . "-$x month"));
 						$mo = array_search( date('M', strtotime($oldMonth)), $monthlist);
-						$arrstat['Ongoing'][$mo] = $arrstat['Ongoing'][$mo] + 1;
 					}
 				}
 				if($checkd){
@@ -456,5 +484,17 @@ class PatientsController{
 		$this->response['months'] = $monthlist;
 
 		return $this->container->response->withJson($this->response);
-	} 
+	}
+	public function fetchPatientList($req, $res, $args){
+		$d = explode(" ~ ",$_GET['date']);
+		$datefrom = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
+		$dateto = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+
+		$patients = PatientsModel::select('patient_id','firstname','middlename','lastname','patient_logs.created_at','patient_logs.status')
+			->join('patient_logs','patient_logs.uid','patients.id')
+			->whereRaw('cast(patient_logs.created_at as date) between "'.$datefrom.'" and "'.$dateto.'"')
+			->orderBy('created_at','desc')->get();
+		$this->response['data'] = $patients;
+		return $this->container->response->withJson($this->response);
+	}
 }

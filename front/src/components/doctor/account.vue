@@ -11,35 +11,50 @@
 					<v-card-text>
 						<v-form ref="vForm" v-on:submit.prevent="saveChanges">
 							<v-layout row wrap>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="First Name" v-model="userData.firstname" type="text" :rules="[formRules.required]"/>
+								<v-flex sm3 md2>
+									<div @click="$refs.file.click()">
+										<input type="file" ref="file" style="display: none" @change="imageSelect">
+										<div class="text-xs-center" v-if="userData.image_path">
+											<img style="cursor:pointer; border:1px solid grey; object-fit: cover; height:180px; width:100%" :src="userData.image_path"/>
+										</div>
+										<div class="text-xs-center" style="cursor:pointer; margin:5px; border:1px solid grey;" v-else>
+											<v-icon dark color="grey" style="margin-top:60px;height:90px">control_point</v-icon>
+										</div>
+									</div>
 								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Middle Name" v-model="userData.middlename" type="text" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]"/>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Last Name" v-model="userData.lastname" type="text" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]"/>
-								</v-flex>
-								<v-flex xs5 md3 class="pa-1">
-									<template>
-										<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
-											<template v-slot:activator="{ on }">
-												<v-text-field label="Date of Birth" v-model="userData.birthdate" readonly v-on="on" @change="save" type="text" :rules="[formRules.required]"/>
+								<v-flex sm9 md10 style="padding-left:10px">
+									<v-layout row wrap>
+										<v-flex xs4 md4 class="pa-1">
+											<v-text-field label="First Name" v-model="userData.firstname" type="text" :rules="[formRules.required]"/>
+										</v-flex>
+										<v-flex xs4 md4 class="pa-1">
+											<v-text-field label="Middle Name" v-model="userData.middlename" type="text" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]"/>
+										</v-flex>
+										<v-flex xs4 md4 class="pa-1">
+											<v-text-field label="Last Name" v-model="userData.lastname" type="text" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]"/>
+										</v-flex>
+										<v-flex xs5 md3 class="pa-1">
+											<template>
+												<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
+													<template v-slot:activator="{ on }">
+														<v-text-field label="Date of Birth" v-model="userData.birthdate" readonly v-on="on" @change="save" type="text" :rules="[formRules.required]"/>
+													</template>
+													<v-date-picker color="green darken-4" ref="picker" v-model="userData.birthdate" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="getAge">
+														<v-btn @click="menu = false" dark block>Close</v-btn>
+													</v-date-picker>
+												</v-menu>
 											</template>
-											<v-date-picker color="green darken-4" ref="picker" v-model="userData.birthdate" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="getAge">
-												<v-btn @click="menu = false" dark block>Close</v-btn>
-											</v-date-picker>
-										</v-menu>
-									</template>
-								</v-flex>
-								<v-flex xs3 md2 class="pa-1">
-									<v-text-field label="Age" type="text" v-model="age" readonly/>
-								</v-flex>
-								<v-flex xs4 md3 class="pa-1">
-									<v-select label="Gender" type="text" v-model="userData.gender" :items="gender" :rules="[formRules.required]"></v-select>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="userData.contact_number" type="text"/>
+										</v-flex>
+										<v-flex xs3 md2 class="pa-1">
+											<v-text-field label="Age" type="text" v-model="age" readonly/>
+										</v-flex>
+										<v-flex xs4 md3 class="pa-1">
+											<v-select label="Gender" type="text" v-model="userData.gender" :items="gender" :rules="[formRules.required]"></v-select>
+										</v-flex>
+										<v-flex xs12 md4 class="pa-1">
+											<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="userData.contact_number" type="text"/>
+										</v-flex>
+									</v-layout>
 								</v-flex>
 								<template v-if="role == 2">
 									<v-flex xs12 md6 class="pa-1">
@@ -61,7 +76,6 @@
 				</v-card>
 			</v-flex>
 		</v-layout>
-		
 		<v-snackbar v-model="sbar" :color="snackBarColor" right top>
 			<v-icon class="white--text" left>{{ icon }}</v-icon>
 			{{ message }}
@@ -141,9 +155,23 @@
 				matchPassword: "",
 				errorMsg: "",
 
+				image: null,
 			}
 		},
 		methods : {
+			imageSelect(e){
+                this.image = e.target.files[0];
+                if(this.image.type === "image/png" || this.image.type === "image/jpeg"){
+                    this.userData.image_path = URL.createObjectURL(this.image);
+                }else{
+					this.message = "Please select a valid image!";
+					this.snackBarColor = "red";
+					this.icon = "cancel";
+					this.sbar = true;
+                    this.userData.image_path = null;
+                    this.image = null;
+                }
+            },
 			getSpecializations : function(){
 				let _this = this;
 				axios.create({
@@ -241,6 +269,9 @@
 				formData.append('specialization', _this.userData.specialization);
 				formData.append('clinic_name',_this.userData.clinic_name);
 				formData.append('clinic_address',_this.userData.clinic_address);
+				if(_this.image!==null){
+                    formData.append('imageFile', _this.image, _this.image.name);
+                }
 				axios.create({
 					baseURL : _this.apiUrl,
 					headers : {

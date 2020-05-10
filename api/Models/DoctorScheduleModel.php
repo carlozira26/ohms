@@ -5,16 +5,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Capsule\Manager as DB;
 
 /**
- * Users Model
+ * Medicines Model
  */
-class UsersModel extends Model
-{
+class DoctorScheduleModel extends Model{
     // The table must be protected
-    protected $table = "users";
+    protected $table = "doctor_schedule";
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "firstname", "middlename", "lastname", "birthdate", "gender", "contact_number", "licensenumber",  "specialization", "clinic_name", "clinic_address", "email", "password", "token", "usertype", "image_path"
+    	"id", "uid", "schedule"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

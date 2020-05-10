@@ -292,7 +292,6 @@
 					this.age = this.getBirthAge(this.dateofBirth);
 				}
 			},
-			
 		},
 		created : function(){
 			this.token = VueCookies.get(this.cookieKey).token;

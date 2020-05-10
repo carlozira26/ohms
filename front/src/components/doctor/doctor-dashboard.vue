@@ -31,8 +31,8 @@
 									<v-card-title class="title white--text green darken-4">
 										Total Count 
 										<v-spacer></v-spacer>
-										<download-excel :data="json_data" name="test.xls">
-											<v-btn icon title="Download" small color="green darken-4"><v-icon color="white">file_download</v-icon></v-btn>
+										<download-excel :data="totalCountData" icon style="cursor:pointer" :title="title" small color="green darken-4" name="Total Count.xls">
+											<v-icon color="white">file_download</v-icon>
 										</download-excel>
 									</v-card-title>
 									<v-divider></v-divider>
@@ -46,8 +46,8 @@
 									<v-card-title class="title white--text green darken-4">
 										Patient Status Outcomes Monthly
 										<v-spacer></v-spacer>
-										<download-excel :data="json_data">
-											<v-btn icon title="Download" small color="green darken-4"><v-icon color="white">file_download</v-icon></v-btn>
+										<download-excel :data="patientListData" :fields="patientListFields" style="cursor:pointer" name="Patient Status Logs.xls" icon title="Patient Status Logs" small color="green darken-4">
+											<v-icon color="white">file_download</v-icon>
 										</download-excel>
 									</v-card-title>
 									<v-divider></v-divider>
@@ -112,19 +112,24 @@
 				},
 				series: [],
 				barSeries : [],
-				json_data: [
-				// {
-				// 	'name': 'Tony Peña',
-				// 	'city': 'New York',
-				// 	'country': 'United States',
-				// 	'birthdate': '1978-03-15',
-				// },{
-				// 	'name': 'Thessaloniki',
-				// 	'city': 'Athens',
-				// 	'country': 'Greece',
-				// 	'birthdate': '1987-11-23',
-				// }
+				totalCount : [],
+				categoriesOfTotal : [
+					'New',
+					'Ongoing',
+					'Success',
+					'Discontinuation'
 				],
+				totalCountData : [],
+				patientListData : [],
+				patientListFields : {
+					'Patient ID' : 'patient_id',
+					'First Name' : 'firstname',
+					'Middle Name' : 'middlename',
+					'Last Name' : 'lastname',
+					'Date/Time' : 'created_at',
+					'Status' : 'status'
+				},
+				title : ''
 			}
 		},
 		methods : {
@@ -161,7 +166,7 @@
 					}
 				});
 			},
-			getStatusOutcomes : function(){
+			getStatusOutcomes : function(){	
 				let _this = this,
 				axis = [];
 				_this.series = [];
@@ -186,6 +191,20 @@
 					}
 				})
 				this.updateChart(axis);
+				this.fetchPatients();
+			},
+			fetchPatients : function(){
+				let _this = this;
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/patients/outcomes/fetch?date='+_this.date)
+				.then(function(res){
+					_this.patientListData = res.data.data;
+				});
 			},
 			getTotalCount : async function(){
 				let _this = this;
@@ -198,6 +217,11 @@
 				})
 				.get('/patient/count?date='+_this.date)
 				.then(function(res){
+					for(let x in res.data.data){
+						_this.totalCount[_this.barOptions.xaxis.categories[x]] = res.data.data[x];
+					}
+					_this.totalCountData.push(_this.totalCount);
+					_this.title = res.data.date_range;
 					ApexCharts.exec("bargraph", "updateSeries",[{
 						data: res.data.data
 					}]);

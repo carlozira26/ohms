@@ -3,6 +3,7 @@ namespace Controllers;
 use Models\UsersModel;
 use Models\PatientsModel;
 use Models\SpecializationsModel;
+use Models\DoctorScheduleModel;
 use \Firebase\JWT\JWT;
 
 class UsersController{
@@ -87,7 +88,7 @@ class UsersController{
 	}
 	public function UserAccount($request, $response, $args){
 		$id = $args['id'];
-		$userDetails = UsersModel::select('firstname','middlename','lastname','birthdate','gender','contact_number','licensenumber','specialization','clinic_name','clinic_address','email')->where('id',$id)->first();
+		$userDetails = UsersModel::select('firstname','middlename','lastname','birthdate','gender','contact_number','licensenumber','specialization','clinic_name','clinic_address','email','image_path')->where('id',$id)->first();
 		
 		$this->response['data'] = $userDetails;
 		$this->response['status'] = true;
@@ -113,24 +114,59 @@ class UsersController{
 		
 		$user = UsersModel::select('email','password')->where('id',$id)->first();
 		$passwordConverter = $this->container['passwordConverter'];
-		$password = (!empty($body['password'])) ? $passwordConverter($body['password']) : $user['password'];
-		
-		UsersModel::where('id',$id)
+		if(!empty($body['password'])){
+			$password = $passwordConverter($body['password']);
+			UsersModel::where('id',$id)
 			->update(array(
-				'firstname' => $body['firstname'],
-				'middlename' => $body['middlename'],
-				'lastname' => $body['lastname'],
-				'birthdate' => $body['birthdate'],
-				'gender' => $body['gender'],
-				'licensenumber' => $body['licensenumber'],
-				'specialization' => $body['specialization'],
-				'contact_number' => $body['contact_number'],
-				'clinic_name' => $body['clinic_name'],
-				'clinic_address' => $body['clinic_address'],
 				'email' => $body['email'],
 				'password' => $password,
+			));	
+		}else{
+			UsersModel::where('id',$id)
+				->update(array(
+					'firstname' => $body['firstname'],
+					'middlename' => $body['middlename'],
+					'lastname' => $body['lastname'],
+					'birthdate' => $body['birthdate'],
+					'gender' => $body['gender'],
+					'licensenumber' => $body['licensenumber'],
+					'specialization' => $body['specialization'],
+					'contact_number' => $body['contact_number'],
+					'clinic_name' => $body['clinic_name'],
+					'clinic_address' => $body['clinic_address'],
 			));
-		return $this->container->response->withJson($password);
+			if(isset($_FILES['imageFile'])){
+				$file = $_FILES['imageFile'];
+				$imgUploadResponse = $this->uploadImage($file,$id);
+				UsersModel::where("id",$id)->update(array(
+				"image_path" => $imgUploadResponse['imageLocation']
+				));
+			}
+		}
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
+	public function uploadImage($file,$id){
+		if(!isset($file['name'])){
+			$error['status']="error";
+			$error['msg']="Encountered an error while uploading image";
+			return json_encode($error);
+		}else{
+			$uploadDirectory = $this->container["settings"]["uploadDirectory"];
+			$baseUrl = $this->container["settings"]["baseUrl"];
+			if($file['error']==0){
+				$fileType = explode("/",$file['type']);
+				if(move_uploaded_file($file['tmp_name'], $uploadDirectory."/Doctors/".$id.".".$fileType[1])==true){
+					$error['status']="success";
+					$error['msg']="The image has been uploaded.";
+					$error['imageLocation'] = $baseUrl."/uploads/Doctors/".$id.".".$fileType[1];
+				}else{
+					$error['status']="error";
+					$error['msg']="Sorry, there was an error uploading the image.";
+				}
+			}
+			return $error;
+		}
 	}
 	public function DoctorsList($req, $res, $args){
 		$Utils = new Utils();
@@ -250,6 +286,51 @@ class UsersController{
 			$this->response["message"] = "Account has been reactivated!";
 		}
 			$this->response["status"] = true;
+		return $this->container->response->withJson($this->response);
+	}
+	public function DoctorSchedule($req, $res, $args){
+		$body = $req->getParsedBody();
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($req, $this->container);
+		$schedule = DoctorScheduleModel::updateOrCreate(
+			['uid' => $user['id']],
+			['schedule' => $body['doctorSchedule']]
+		);
+
+		if($schedule){
+			$this->response['status'] = true;
+		}
+		return $this->container->response->withJson($this->response);
+	}
+	public function FetchDoctorSchedule($req, $res, $args){
+		if($args['id']==''){
+			$Utils = new Utils();
+			$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		}
+		$id = ($args['id']=='') ? $user['id'] : $args['id'];
+
+		$schedule = DoctorScheduleModel::select('schedule')->where('uid', $id)->first();
+		if($schedule){
+			$this->response['data'] = $schedule;
+			$this->response['status'] = true;
+		}
+
+		return $this->container->response->withJson($this->response);
+	}
+	public function DoctorsProfile($req, $res, $args){
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+
+		$doctor = PatientsModel::select('doctor_id')->where('id',$user['id'])->first();
+		$profile = UsersModel::select('firstname','lastname','specialization','clinic_name','clinic_address','contact_number','image_path','schedule')
+			->join('doctor_schedule','users.id','=','doctor_schedule.uid')
+			->where('users.id',$doctor['doctor_id'])
+			->first();
+
+			if($profile){
+				$this->response['data'] = $profile;
+				$this->response['status'] = true;
+			}
 		return $this->container->response->withJson($this->response);
 	}
 }

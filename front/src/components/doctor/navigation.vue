@@ -41,6 +41,13 @@
                                 </v-list-tile-title>
                             </v-list-tile-content>
                         </v-list-tile>
+                        <v-list-tile active-class="highlighted green darken-2" @click="openDoctorSchedule" v-if="role == 2">
+                            <v-list-tile-content>
+                                <v-list-tile-title>
+                                    Schedule
+                                </v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
                         <v-list-tile active-class="highlighted green darken-2" @click="openChangeCredential">
                             <v-list-tile-content>
                                 <v-list-tile-title>
@@ -88,7 +95,6 @@
                                 <v-list-tile-avatar>
                                     <v-icon large>person</v-icon>
                                 </v-list-tile-avatar>
-
                                 <v-list-tile-content>
                                     <v-list-tile-title>{{user.fullname}}</v-list-tile-title>
                                     <v-list-tile-sub-title :class="color">{{status}}</v-list-tile-sub-title>
@@ -105,7 +111,7 @@
                                     <span>My Profile</span>
                                 </v-list-tile-title>
                             </v-list-tile>
-                            <v-list-tile>
+                            <v-list-tile @click="openDoctorProfile">
                                 <v-list-tile>
                                     <v-icon>fa-user-md</v-icon>
                                 </v-list-tile>
@@ -143,17 +149,20 @@
 			<router-view></router-view>
 		</v-content>
 		<view-profile></view-profile>
+		<view-doctor></view-doctor>
 		<view-message></view-message>
 		<view-logs></view-logs>
+		<view-doctor-schedule></view-doctor-schedule>
 		<view-change-credential></view-change-credential>
 	</div>
 </template>
 <script>
 import VueCookies from 'vue-cookies';
 import openLogs from './modal/intakelogs.vue';
-// import axios from 'axios';
 import viewProfile from './modal/view-profile.vue';
+import viewDoctor from './modal/view-doctor.vue';
 import viewMessage from './modal/messenger.vue';
+import viewDoctorSchedule from './modal/doctor-schedule.vue';
 import viewChangeCredential from './modal/change-credential.vue';
 
 export default {
@@ -168,8 +177,10 @@ export default {
 	},
 	components : {
 		'view-profile' : viewProfile,
+		'view-doctor' : viewDoctor,
 		'view-message' : viewMessage,
 		'view-logs'    : openLogs,
+		'view-doctor-schedule'    : viewDoctorSchedule,
 		'view-change-credential' : viewChangeCredential,
 	},
 	data : () => ({
@@ -215,11 +226,17 @@ export default {
 		openProfile : function(){
 			this.eventHub.$emit('viewProfile', true);
 		},
+		openDoctorProfile : function(){
+			this.eventHub.$emit('viewDoctor', true);
+		},
 		openMessage : function(){
 			this.eventHub.$emit('viewMessage', { 'wsconnect' : this.wsconnect});
 		},
 		openLogs : function(){
 			this.eventHub.$emit('viewLogs', {'patientID' : this.user.id});
+		},
+		openDoctorSchedule : function(){
+			this.eventHub.$emit('viewDoctorSchedule', true);
 		},
 		openChangeCredential : function(){
 			this.eventHub.$emit('showChangeCredentials', this.user.id);
