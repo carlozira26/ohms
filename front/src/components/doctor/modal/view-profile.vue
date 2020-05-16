@@ -66,16 +66,16 @@
 										<v-select label="TB Category" :items="category" disabled></v-select>
 									</template>
 								</v-flex>
-								<v-flex xs4 md12 class="pa-1">
+								<v-flex xs4 sm4 md4 class="pa-1">
 									<v-text-field label="House Number" :rules="[formRules.required]" v-model="userData.address"/>
 								</v-flex>
-								<v-flex xs8 md12 class="pa-1">
+								<v-flex xs8 sm8 md8 class="pa-1">
 									<v-text-field label="Street" :rules="[formRules.required]" v-model="userData.street"/>
 								</v-flex>
-								<v-flex xs6 md12 class="pa-1">
+								<v-flex xs6 sm6 md6 class="pa-1">
 									<v-text-field label="Barangay" :rules="[formRules.required]" v-model="userData.barangay"/>
 								</v-flex>
-								<v-flex xs6 md12 class="pa-1">
+								<v-flex xs6 sm6 md6 class="pa-1">
 									<v-text-field label="Municipality/City" :rules="[formRules.required]" v-model="userData.city"/>
 								</v-flex>
 
@@ -176,9 +176,9 @@
 				formData.append('dateofbirth', this.userData.dateofbirth);
 				formData.append('mobilenumber', this.userData.mobilenumber);
 				formData.append('address', this.userData.address);
-				formData.append('address', this.userData.street);
-				formData.append('address', this.userData.barangay);
-				formData.append('address', this.userData.city);
+				formData.append('street', this.userData.street);
+				formData.append('barangay', this.userData.barangay);
+				formData.append('city', this.userData.city);
 
 				axios.create({
 					baseURL : this.apiUrl,
