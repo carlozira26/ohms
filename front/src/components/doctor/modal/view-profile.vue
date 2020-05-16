@@ -176,6 +176,9 @@
 				formData.append('dateofbirth', this.userData.dateofbirth);
 				formData.append('mobilenumber', this.userData.mobilenumber);
 				formData.append('address', this.userData.address);
+				formData.append('address', this.userData.street);
+				formData.append('address', this.userData.barangay);
+				formData.append('address', this.userData.city);
 
 				axios.create({
 					baseURL : this.apiUrl,
