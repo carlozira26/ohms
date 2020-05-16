@@ -104,7 +104,7 @@ export default {
             let d = new Date(date);
             return d.toDateString().substr(4);
         },
-        changeLicenseFormat: function(id){
+        changeLicenseFormat: function(id = ''){
             var idFormat = id.substr(0,2)+"-"+id.substr(2,7);
             return idFormat;
         }

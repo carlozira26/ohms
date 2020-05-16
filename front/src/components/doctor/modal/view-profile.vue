@@ -49,16 +49,16 @@
 								<v-flex xs3 md2 class="pa-1">
 									<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="userData.gender"/>
 								</v-flex>
-								<v-flex xs4 md4 class="pa-1">
+								<v-flex xs8 md4 class="pa-1">
 									<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="userData.mobilenumber"/>
 								</v-flex>
-								<v-flex xs3 md3 class="pa-1">
+								<v-flex xs4 md3 class="pa-1">
 									<v-text-field label="Status" v-model="userData.status" persistent-hint hint="Cannot be edited" readonly></v-text-field>
 								</v-flex>
-								<v-flex xs3 md3 class="pa-1">
+								<v-flex xs6 md3 class="pa-1">
 									<v-select label="DR-TB" :items="presumptive" v-model="userData.drtb" persistent-hint hint="Cannot be edited" readonly/>
 								</v-flex>
-								<v-flex xs2 md2 class="pa-1">
+								<v-flex xs6 md2 class="pa-1">
 									<template v-if="userData.drtb=='Yes'">
 										<v-select label="TB Category" :items="category" v-model="userData.category" persistent-hint hint="Cannot be edited" readonly></v-select>
 									</template>
@@ -66,9 +66,19 @@
 										<v-select label="TB Category" :items="category" disabled></v-select>
 									</template>
 								</v-flex>
-								<v-flex xs12 md12 class="pa-1">
-									<v-text-field label="Address" :rules="[formRules.required]" v-model="userData.address"/>
+								<v-flex xs4 md12 class="pa-1">
+									<v-text-field label="House Number" :rules="[formRules.required]" v-model="userData.address"/>
 								</v-flex>
+								<v-flex xs8 md12 class="pa-1">
+									<v-text-field label="Street" :rules="[formRules.required]" v-model="userData.street"/>
+								</v-flex>
+								<v-flex xs6 md12 class="pa-1">
+									<v-text-field label="Barangay" :rules="[formRules.required]" v-model="userData.barangay"/>
+								</v-flex>
+								<v-flex xs6 md12 class="pa-1">
+									<v-text-field label="Municipality/City" :rules="[formRules.required]" v-model="userData.city"/>
+								</v-flex>
+
 								<v-flex xs12 md12 class="pa-1">
 									<v-textarea label="Remarks" solo v-model="userData.remarks" persistent-hint hint="Cannot be edited" readonly></v-textarea>
 								</v-flex>
@@ -152,6 +162,7 @@
 					if(res.data.status){
 						_this.userData = res.data.data;
 						_this.dateofbirth = _this.userData.dateofbirth;
+						console.log(_this.userData);
 					}
 				});
 			},

@@ -10,7 +10,7 @@
 				<v-card-text>
 					<template>
 						<v-layout row wrap>
-							<v-flex sm4 md3>
+							<v-flex xs4 sm4 md3>
 								<div>
 									<div class="text-xs-center" v-if="userData.image_path">
 										<img style="border:1px solid grey; object-fit: cover; height:120px; width:100%" src="http://122.53.152.8/ohms/api/uploads/Doctors/8.jpeg"/>
@@ -20,44 +20,44 @@
 									</div>
 								</div>
 							</v-flex>
-							<v-flex sm8 md9 class="text-sm-left">
+							<v-flex xs8 sm8 md9 class="text-sm-left text-xs-left">
 								<v-flex md12 style="margin-left:10px">
 									<div class="title">
 										Doctor {{userData.firstname + " " + userData.lastname}}
 									</div>
-									<div class="subheading">
+									<div class="subheading text-xs-left">
 										{{ userData.specialization }} - {{userData.subspecialization}}
 									</div>
-									<div class="subheading">
+									<div class="subheading text-xs-left">
 										License: {{ changeLicenseFormat(userData.licensenumber) }}
 									</div>
 								</v-flex>
 								<v-flex md12 style="margin-left:10px; margin-top:10px">
-									<div class="subheading">
+									<div class="subheading text-xs-left">
 										{{ userData.clinic_name }}
 									</div>
-									<div class="body-2">
+									<div class="body-2 text-xs-left">
 										{{ userData.clinic_address }}
 									</div>
-									<div class="body-2">
+									<div class="body-2 text-xs-left">
 										{{ userData.contact_number }}
 									</div>
 								</v-flex>
-								<v-flex md12 style="margin-left:10px; margin-top:10px">
-									<div class="title">
-										Schedule
-									</div>
-									<div>
-										<table width="100%">
-											<tbody>
-												<tr v-for="(day,i) in days" :key="i">
-													<td width="25%">{{ day }}</td>
-													<td>{{ doctorSchedule[i]}}</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
-								</v-flex>
+							</v-flex>
+							<v-flex md12 style="margin-left:10px; margin-top:10px">
+								<div class="title">
+									Schedule
+								</div>
+								<div>
+									<table width="100%">
+										<tbody>
+											<tr v-for="(day,i) in days" :key="i">
+												<td width="40%" class="text-sm-right">{{ day }}</td>
+												<td class="text-xs-left pl-3">{{ doctorSchedule[i]}}</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
 							</v-flex>
 						</v-layout>
 					</template>
