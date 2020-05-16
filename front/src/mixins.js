@@ -27,9 +27,8 @@ export default {
     data : function(){
         return {
             cookieKey : 'ohmscookiekey',
-            // apiUrl : 'http://jru-ohms.000webhostapp.com/api',
-            // apiUrl : 'http://122.53.152.8/ohms/api',
-            apiUrl : 'http://localhost/ohms/api',
+            apiUrl : 'http://122.53.152.8/ohms/api',
+            // apiUrl : 'http://localhost/ohms/api',
             websocket : 'ws://122.53.152.8:3552/',
             token : '',
             eventHub: eventHub,
@@ -104,6 +103,10 @@ export default {
         dateFormat : function(date){
             let d = new Date(date);
             return d.toDateString().substr(4);
-        } 
+        },
+        changeLicenseFormat: function(id){
+            var idFormat = id.substr(0,2)+"-"+id.substr(2,7);
+            return idFormat;
+        }
     }
 };

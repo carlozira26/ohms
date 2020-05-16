@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<v-dialog v-model="medicineListModal" content-class="test">
+		<v-dialog v-model="medicineListModal" content-class="test" scrollable>
 			<v-card>
 				<v-card-title class="green darken-4">
 					<h1 class="white--text">Medicine List</h1>
@@ -22,7 +22,7 @@
 								<thead>
 									<tr class="grey lighten-4" style="border-bottom:1px solid #333">
 										<th class="font-weight-bold text-xs-center" style="width:20%;">MEDICINE NAME</th>
-										<th class="font-weight-bold text-xs-center" style="width:20%;">INSTRUCTIONS</th>
+										<!-- <th class="font-weight-bold text-xs-center" style="width:20%;">INSTRUCTIONS</th> -->
 										<th class="font-weight-bold text-xs-center" style="width:10%;">STATUS</th>
 										<th class="font-weight-bold text-xs-center" style="width:20%;">ACTIONS</th>
 									</tr>
@@ -36,7 +36,7 @@
 									<template v-else>
 										<tr v-for="(medicine,index) in medicineList" v-bind:key="index">
 											<td>{{ medicine.brandname + " (" + medicine.genericname + ")"}}</td>
-											<td>{{ medicine.instructions }}</td>
+											<!-- <td>{{ medicine.instructions }}</td> -->
 											<td>{{ medicine.is_active }}</td>
 											<td>
 												<v-tooltip bottom>
@@ -70,15 +70,15 @@
 				</v-card-title>
 				<v-card-text>
 					<v-layout wrap>
-						<v-flex md3 sm12 class="pa-1">
+						<v-flex md6 sm12 class="pa-1">
 							<v-text-field label="Brand Name" v-model="brandName" :rules="[formRules.required]"></v-text-field>  
 						</v-flex>
-						<v-flex md3 sm12 class="pa-1">
+						<v-flex md6 sm12 class="pa-1">
 							<v-text-field label="Generic Name" v-model="genericName" :rules="[formRules.required]"></v-text-field>  
 						</v-flex>
-						<v-flex md6 sm12 class="pa-1">
+						<!-- <v-flex md6 sm12 class="pa-1">
 							<v-text-field label="Instructions" v-model="instructions" :rules="[formRules.required]"></v-text-field>
-						</v-flex>
+						</v-flex> -->
 					</v-layout>
 				</v-card-text>
 				<v-divider></v-divider>
@@ -303,6 +303,7 @@
 				.get('/medicine/list?page='+_this.pagination.page+'&search='+_this.search)
 				.then(function(res){
 					_this.medicineList = res.data.data;
+					console.log(_this.medicineList);
 					_this.pagination.length = Math.ceil(res.data.count.count / 6);
 				});
 			},

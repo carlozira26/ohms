@@ -217,7 +217,7 @@
 				})
 				.get('/users/specializations')
 				.then(function(res){
-					_this.specializationList = res.data;
+					_this.specializationList = res.data.data.specializations;
 				})
 			},
 			doctorModal(type,index) {

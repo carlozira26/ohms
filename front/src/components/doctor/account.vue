@@ -57,11 +57,14 @@
 									</v-layout>
 								</v-flex>
 								<template v-if="role == 2">
-									<v-flex xs12 md6 class="pa-1">
+									<v-flex xs12 md4 class="pa-1">
 										<v-text-field label="License Number" v-model="userData.licensenumber" :rules="[formRules.licenseNumber]" type="text"/>
 									</v-flex>
-									<v-flex xs12 md6 class="pa-1">
-										<v-select label="Specialization" :items="specializationList" item-text="type" v-model="userData.specialization" type="text"/>
+									<v-flex xs12 md4 class="pa-1">
+										<v-select label="Specialization" :items="specializationList" item-text="type" @change="getSub" v-model="userData.specialization" type="text"/>
+									</v-flex>
+									<v-flex xs12 md4 class="pa-1">
+										<v-select label="Sub-Specialization" :items="subSpecializationList" item-text="sub_type" v-model="userData.subspecialization" type="text"/>
 									</v-flex>
 									<v-flex xs12 md6 class="pa-1">
 										<v-text-field label="Clinic Name" v-model="userData.clinic_name" type="text"/>
@@ -136,6 +139,8 @@
 			return {
 				userData : [],
 				specializationList : [],
+				subSpecializationList : [],
+				sub : [],
 				
 				age: 0,
 				menu : false,
@@ -159,6 +164,18 @@
 			}
 		},
 		methods : {
+			getSub : function(sub){
+				for(let x in this.specializationList){
+					if(this.userData.specialization == this.specializationList[x].type){
+						for(let y in this.sub){
+							if(this.specializationList[x].id == this.sub[y].uid){
+								this.subSpecializationList.push(this.sub[y].sub_type);
+							}
+						}
+						this.userData.subspecialization = sub;
+					}
+				}
+			},
 			imageSelect(e){
                 this.image = e.target.files[0];
                 if(this.image.type === "image/png" || this.image.type === "image/jpeg"){
@@ -182,7 +199,8 @@
 				})
 				.get('/users/specializations')
 				.then(function(res){
-					_this.specializationList = res.data;
+					_this.specializationList = res.data.data.specializations;
+					_this.sub = res.data.data.subspecializations;
 				})
 			},
 			getAccount : function(){
@@ -197,6 +215,7 @@
 				.then(function(res){
 					_this.userData = res.data.data;
 					_this.age = _this.getBirthAge(_this.userData.birthdate);
+					_this.getSub(_this.userData.subspecialization);
 				});
 			},
 			openModal : function(){
@@ -267,6 +286,7 @@
 				formData.append('contact_number',_this.userData.contact_number);
 				formData.append('licensenumber', _this.userData.licensenumber);
 				formData.append('specialization', _this.userData.specialization);
+				formData.append('subspecialization', _this.userData.subspecialization);
 				formData.append('clinic_name',_this.userData.clinic_name);
 				formData.append('clinic_address',_this.userData.clinic_address);
 				if(_this.image!==null){

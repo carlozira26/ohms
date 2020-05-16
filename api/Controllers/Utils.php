@@ -21,4 +21,5 @@ class Utils
 		$user = PatientsModel::where("token", $decoded)->first();
 		return $user;
 	}
+
 }

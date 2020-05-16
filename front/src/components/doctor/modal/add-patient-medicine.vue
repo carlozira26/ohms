@@ -15,7 +15,7 @@
 				<template v-if="err==false">
 					<v-card-text>
 						<v-layout row wrap v-for="(medicine,index) in medicineList" :key="index">
-							<v-flex xs6 md5 class="pa-1">
+							<v-flex xs7 md6 class="pa-1">
 								<v-select label="Medicine" :items="medicineSelect" item-value="id" item-text="medicinename" v-model="medicine.medicineID" :rules="[formRules.required]" @change="addInstructions(medicine.medicineID,index)"></v-select>
 							</v-flex>
 							<v-flex xs2 md2 class="pa-1">
@@ -24,7 +24,7 @@
 							<v-flex xs2 md3 class="pa-1">
 								<v-text-field label="Pieces" :rules="[formRules.required]" v-model="medicine.medicinePieces"></v-text-field>
 							</v-flex>
-							<v-flex xs1 md1>
+							<!-- <v-flex xs1 md1>
 								<v-menu open-on-hover right bottom :offset-x="offset">
 									<template v-slot:activator="{ on }">
 										<v-btn fab small icon outline class="green darken-4" v-on="on"><v-icon color="green darken-4">fa fa-file-prescription</v-icon></v-btn>
@@ -45,7 +45,7 @@
 										</v-card>
 									</template>
 								</v-menu>
-							</v-flex>
+							</v-flex> -->
 							<v-flex xs1 md1 v-if ="index != 0">
 								<v-btn fab small icon outline class="red darken-4" @click="removeRow(index)"><v-icon color="red darken-4">fa fa-minus</v-icon></v-btn>
 							</v-flex>

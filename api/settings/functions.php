@@ -21,6 +21,17 @@ $container['isEmail'] = function($string = ''){
     };
 };
 
+$container['changeLicense'] = function(){
+    return function($id){
+        for($x=0; $x<strlen($id); $x++){
+            if($x<5){
+                $id[$x] = "X";
+            }
+        }
+        return $id;
+    };
+};
+
 $container['generateRandomNumbers'] = function(){
     return function($length = 4){
         return substr(str_shuffle(str_repeat($x='0123456789', ceil($length/strlen($x)) )),1,$length);

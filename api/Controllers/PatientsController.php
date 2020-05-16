@@ -36,7 +36,10 @@ class PatientsController{
 			'lastname' => $body['lastname'],
 			'dateofbirth' => $body['dateofbirth'],
 			'mobilenumber' => $body['mobilenumber'],
-			'address' => $body['address']
+			'address' => $body['address'],
+			'street' => $body['street'], 
+			'barangay' => $body['barangay'],
+			'city' => $body['city']
 		));
 
 		if($patient){
@@ -100,6 +103,9 @@ class PatientsController{
 					"mobilenumber" => $body['mobilenumber'],
 					"drtb" => $body['drtb'],
 					"address" => ucwords(strtolower($body['address'])),
+					"street" => ucwords(strtolower($body['street'])),
+					"barangay" => ucwords(strtolower($body['barangay'])),
+					"city" => ucwords(strtolower($body['city'])),
 					"remarks" => (!empty($body['remarks']) && $body['remarks'] != 'undefined') ? $body['remarks'] : NULL,
 					"username" => $body['username'],
 					"password" => $password,
@@ -125,6 +131,9 @@ class PatientsController{
 					"drtb" => $body['drtb'],
 					"category" => $body['category'],
 					"address" => $body['address'],
+					"street" => $body['street'],
+					"barangay" => $body['barangay'],
+					"city" => $body['city'],
 					"remarks" => $body['remarks'],
 					"username" => $body['username'],
 					"password" => $password
@@ -144,7 +153,7 @@ class PatientsController{
 		$status = $_GET['status'];
 		$limit = 20;
 		$offset = ($_GET['page'] - 1) * $limit;
-		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","remarks");
+		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","street","barangay","city","remarks");
 
 		$patientCount = PatientsModel::selectRaw("count(id) as count");
 		if(!empty($status)){

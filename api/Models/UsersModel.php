@@ -14,7 +14,7 @@ class UsersModel extends Model
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "firstname", "middlename", "lastname", "birthdate", "gender", "contact_number", "licensenumber",  "specialization", "clinic_name", "clinic_address", "email", "password", "token", "usertype", "image_path"
+    	"id", "firstname", "middlename", "lastname", "birthdate", "gender", "contact_number", "licensenumber",  "specialization", "subspecialization", "clinic_name", "clinic_address", "email", "password", "token", "usertype", "image_path"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

@@ -26,7 +26,10 @@
 										Doctor {{userData.firstname + " " + userData.lastname}}
 									</div>
 									<div class="subheading">
-										{{ userData.specialization }}
+										{{ userData.specialization }} - {{userData.subspecialization}}
+									</div>
+									<div class="subheading">
+										License: {{ changeLicenseFormat(userData.licensenumber) }}
 									</div>
 								</v-flex>
 								<v-flex md12 style="margin-left:10px; margin-top:10px">

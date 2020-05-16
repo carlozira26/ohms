@@ -2,7 +2,7 @@
 	<div>
 		<v-layout row wrap>
 			<v-flex class="pa-3">
-				<v-card min-width="700px" style="overflow:auto">
+				<v-card min-width="700px" style="overflow:auto" scrollable>
 					<v-card-title>
 						<h1 class="green--text">Patients List</h1>
 						<v-spacer></v-spacer>
@@ -25,7 +25,7 @@
 								<v-text-field single-line prepend-icon="search" full-width hide-details @keyup="loadPatients" v-model="search" label="Search here ..."></v-text-field>
 							</v-flex>
 							<v-flex md2>
-								<v-select solo label="Status" :items="status" v-model="statusFilter" @change="loadPatients"></v-select>
+								<v-select solo hide-details label="Status" :items="status" v-model="statusFilter" @change="loadPatients"></v-select>
 							</v-flex>
 						</v-layout>
 						<table class="v-datatable v-table" style="border:1px solid #ddd">
@@ -53,10 +53,10 @@
 									</tr>
 								</template>
 								<template v-else>
-									<tr v-for="(patient,index) in patientList"  v-bind:key="patient.id">
+									<tr v-for="(patient,index) in patientList" v-bind:key="patient.id">
 										<td>{{ patient.patient_id }}</td>
 										<td>{{ patient.lastname + ", " + patient.firstname }}</td>
-										<td  class="pt-2"><v-select flat box label="Status" :items="status" v-model="patient.status" @change="changeStatus(index)" solo></v-select></td>
+										<td  class="pt-1 pb-1"><v-select flat hide-details box label="Status" :items="status" v-model="patient.status" @change="changeStatus(index)" solo></v-select></td>
 										<td>{{ patient.category }}</td>
 										<td>{{ patient.remarks }}</td>
 										<td>
@@ -146,88 +146,95 @@
 				</v-card>
 			</v-flex>
 		</v-layout>
-		<v-dialog v-model="patientDetails" width="700">
+		<v-dialog v-model="patientDetails" width="700" scrollable>
 			<v-card>
-				<v-form ref="vForm" v-on:submit.prevent="patientAccount">
-					<v-card-title primary-title class="green darken-4 white--text">
-						<h1>{{ title }}</h1>
-					</v-card-title>
-					<v-card-text>
-						<template>
-							<div style="font-size:20px" class="text-xs-left">
-								Patient ID : {{ patientID }}
-							</div>
-							<v-divider class="mb-2 mt-2"></v-divider>
-							<v-layout row wrap>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="firstName" type="text"/>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="middleName" type="text"/>
-								</v-flex>
-								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="lastName" type="text"/>
-								</v-flex>
-								<v-flex xs12 md6 class="pa-1">
-									<v-text-field label="Username" type="text" v-model="username" :rules="[formRules.required]"/>
-								</v-flex>
-								<v-flex xs12 md6 class="pa-1">
-									<v-text-field label="Password will be their birthdate('YYYMMDD')" v-model="password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
-								</v-flex>
-								<v-flex xs9 md4 class="pa-1">
-									<template>
-										<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
-											<template v-slot:activator="{ on }">
-												<v-text-field label="Date of Birth" readonly v-on="on" v-model="dateofBirth" @change="save" type="text" :rules="[formRules.required]"/>
-											</template>
-											<v-date-picker color="green darken-4" ref="picker" v-model="dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
-												<v-btn @click="menu = false" dark block>Close</v-btn>
-											</v-date-picker>
-										</v-menu>
-									</template>
-								</v-flex>
-								<v-flex xs3 md2 class="pa-1">
-									<v-text-field label="Age" v-model="age" type="text" readonly/>
-								</v-flex>
-								<v-flex xs9 md4 class="pa-1">
-									<v-text-field label="Date of Consultation" v-model="consultationDate" type="text" readonly/>
-								</v-flex>
-								<v-flex xs3 md2 class="pa-1">
-									<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="patientgender"/>
-								</v-flex>
-								<v-flex xs4 md4 class="pa-1">
-									<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="mobilenumber"/>
-								</v-flex>
-								<v-flex xs3 md3 class="pa-1">
-									<v-text-field label="Status" v-model="patientstatus" readonly></v-text-field>
-									<!-- <v-select label="Status" :items="status" v-model="patientstatus"/> -->
-								</v-flex>
-								<v-flex xs3 md3 class="pa-1">
-									<v-select label="DR-TB" :items="presumptive" v-model="drtb"/>
-								</v-flex>
-								<v-flex xs2 md2 class="pa-1">
-									<template v-if="drtb=='Yes'">
-										<v-select label="TB Category" :items="category" v-model="tbcategory"></v-select>
-									</template>
-									<template v-else>
-										<v-select label="TB Category" :items="category" disabled></v-select>
-									</template>
-								</v-flex>
-								<v-flex xs12 md12 class="pa-1">
-									<v-text-field label="Address" :rules="[formRules.required]" v-model="address"/>
-								</v-flex>
-								<v-flex xs12 md12 class="pa-1">
-									<v-textarea label="Remarks" solo v-model="remarks"></v-textarea>
-								</v-flex>
-							</v-layout>
-						</template>
-					</v-card-text>
-					<v-card-actions>
-						<v-spacer></v-spacer>
-						<v-btn large flat @click="patientAccount(formType)">Submit</v-btn>
-						<v-btn large flat @click="patientDetails=false">Cancel</v-btn>
-					</v-card-actions>
-				</v-form>
+				<v-card-title primary-title class="green darken-4 white--text">
+					<h1>{{ title }}</h1>
+				</v-card-title>
+				<v-card-text>
+					<v-form ref="vForm" v-on:submit.prevent="patientAccount">
+						<div style="font-size:20px" class="text-xs-left">
+							Patient ID : {{ patientID }}
+						</div>
+						<v-divider class="mb-2 mt-2"></v-divider>
+						<v-layout row wrap>
+							<v-flex xs12 md4 class="pa-1">
+								<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="firstName" type="text"/>
+							</v-flex>
+							<v-flex xs12 md4 class="pa-1">
+								<v-text-field label="Middle Name" :rules="[formRules.required,formRules.textOnly]" v-model="middleName" type="text"/>
+							</v-flex>
+							<v-flex xs12 md4 class="pa-1">
+								<v-text-field label="Last Name" :rules="[formRules.required,formRules.textOnly]" v-model="lastName" type="text"/>
+							</v-flex>
+							<v-flex xs12 md6 class="pa-1">
+								<v-text-field label="Username" type="text" v-model="username" :rules="[formRules.required]"/>
+							</v-flex>
+							<v-flex xs12 md6 class="pa-1">
+								<v-text-field label="Password" hint="Password is defaulted to the Patient's Birthday" persistent-hint v-model="password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
+							</v-flex>
+							<v-flex xs9 md4 class="pa-1">
+								<template>
+									<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
+										<template v-slot:activator="{ on }">
+											<v-text-field label="Date of Birth" readonly v-on="on" v-model="dateofBirth" @change="save" type="text" :rules="[formRules.required]"/>
+										</template>
+										<v-date-picker color="green darken-4" ref="picker" v-model="dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
+											<v-btn @click="menu = false" dark block>Close</v-btn>
+										</v-date-picker>
+									</v-menu>
+								</template>
+							</v-flex>
+							<v-flex xs3 md2 class="pa-1">
+								<v-text-field label="Age" v-model="age" type="text" readonly/>
+							</v-flex>
+							<v-flex xs9 md4 class="pa-1">
+								<v-text-field label="Date of Consultation" v-model="consultationDate" type="text" readonly/>
+							</v-flex>
+							<v-flex xs3 md2 class="pa-1">
+								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="patientgender"/>
+							</v-flex>
+							<v-flex xs4 md4 class="pa-1">
+								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="mobilenumber"/>
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-text-field label="Status" v-model="patientstatus" readonly></v-text-field>
+								<!-- <v-select label="Status" :items="status" v-model="patientstatus"/> -->
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-select label="DR-TB" :items="presumptive" v-model="drtb"/>
+							</v-flex>
+							<v-flex xs2 md2 class="pa-1">
+								<template v-if="drtb=='Yes'">
+									<v-select label="TB Category" :items="category" v-model="tbcategory"></v-select>
+								</template>
+								<template v-else>
+									<v-select label="TB Category" :items="category" disabled></v-select>
+								</template>
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-text-field label="House Number" :rules="[formRules.required]" v-model="address"/>
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-text-field label="Street" :rules="[formRules.required]" v-model="street"/>
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-text-field label="Barangay" :rules="[formRules.required]" v-model="barangay"/>
+							</v-flex>
+							<v-flex xs3 md3 class="pa-1">
+								<v-text-field label="Municipality/City" :rules="[formRules.required]" v-model="city"/>
+							</v-flex>
+							<v-flex xs12 md12 class="pa-1">
+								<v-textarea label="Remarks" solo v-model="remarks"></v-textarea>
+							</v-flex>
+						</v-layout>
+					</v-form>
+				</v-card-text>
+				<v-card-actions>
+					<v-spacer></v-spacer>
+					<v-btn large flat @click="patientAccount(formType)">Submit</v-btn>
+					<v-btn large flat @click="patientDetails=false">Cancel</v-btn>
+				</v-card-actions>
 			</v-card>
 		</v-dialog>
 		<v-dialog v-model="statusChangeModal" width="30%">
@@ -354,6 +361,9 @@
 				drtb: "Yes",
 				tbcategory: "",
 				address: "",
+				street: "",
+				barangay: "",
+				city: "",
 				remarks: "",
 				username: "",
 				password: "",
@@ -395,6 +405,9 @@
 					formData.append('drtb', _this.drtb);
 					formData.append('category',_this.tbcategory);
 					formData.append('address', _this.address);
+					formData.append('street', _this.street);
+					formData.append('barangay', _this.barangay);
+					formData.append('city', _this.city);
 					formData.append('remarks', _this.remarks);
 					formData.append('username', _this.username);
 					formData.append('password', _this.password);
@@ -479,6 +492,9 @@
 					this.drtb = this.patientList[index].drtb;
 					this.tbcategory = this.patientList[index].category;
 					this.address = this.patientList[index].address;
+					this.street = this.patientList[index].street;
+					this.barangay = this.patientList[index].barangay;
+					this.city = this.patientList[index].city;
 					this.remarks = this.patientList[index].remarks;
 				}
 				this.patientDetails = true;

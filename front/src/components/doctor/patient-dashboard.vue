@@ -74,7 +74,7 @@
                                                                 <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
                                                             </v-list-tile-action>
                                                             {{medicine.name}}
-                                                            <v-spacer></v-spacer>
+                                                            <!-- <v-spacer></v-spacer>
                                                             <v-menu open-on-hover right bottom>
                                                                 <template v-slot:activator="{ on }">
                                                                     <v-btn fab small icon><v-icon v-on="on" color="green darken-4">fa-info-circle</v-icon></v-btn>
@@ -85,7 +85,7 @@
                                                                         {{ medicine.instructions }}
                                                                     </v-card-text>
                                                                 </v-card>
-                                                            </v-menu>
+                                                            </v-menu> -->
                                                         </v-list-tile>
                                                     </v-list>
                                                 </template>

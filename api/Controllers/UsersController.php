@@ -3,6 +3,7 @@ namespace Controllers;
 use Models\UsersModel;
 use Models\PatientsModel;
 use Models\SpecializationsModel;
+use Models\SubSpecializationsModel;
 use Models\DoctorScheduleModel;
 use \Firebase\JWT\JWT;
 
@@ -45,7 +46,10 @@ class UsersController{
 	
 	public  function SpecializationList($req, $res, $args){
 		$list = SpecializationsModel::orderBy('type','asc')->get();
-		return $this->container->response->withJson($list);
+		$sublist = SubSpecializationsModel::select('uid','sub_type')->orderBy('sub_type','asc')->get();
+		$this->response['data']['specializations'] = $list;
+		$this->response['data']['subspecializations'] = $sublist;
+		return $this->container->response->withJson($this->response);
 	}
 
 	public function UserAuth($request, $response, $args){
@@ -88,7 +92,7 @@ class UsersController{
 	}
 	public function UserAccount($request, $response, $args){
 		$id = $args['id'];
-		$userDetails = UsersModel::select('firstname','middlename','lastname','birthdate','gender','contact_number','licensenumber','specialization','clinic_name','clinic_address','email','image_path')->where('id',$id)->first();
+		$userDetails = UsersModel::select('firstname','middlename','lastname','birthdate','gender','contact_number','licensenumber','specialization','subspecialization','clinic_name','clinic_address','email','image_path')->where('id',$id)->first();
 		
 		$this->response['data'] = $userDetails;
 		$this->response['status'] = true;
@@ -131,6 +135,7 @@ class UsersController{
 					'gender' => $body['gender'],
 					'licensenumber' => $body['licensenumber'],
 					'specialization' => $body['specialization'],
+					'subspecialization' => $body['subspecialization'],
 					'contact_number' => $body['contact_number'],
 					'clinic_name' => $body['clinic_name'],
 					'clinic_address' => $body['clinic_address'],
@@ -322,11 +327,13 @@ class UsersController{
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
 
 		$doctor = PatientsModel::select('doctor_id')->where('id',$user['id'])->first();
-		$profile = UsersModel::select('firstname','lastname','specialization','clinic_name','clinic_address','contact_number','image_path','schedule')
+		$profile = UsersModel::select('firstname','lastname','subspecialization','specialization','clinic_name','clinic_address','contact_number','image_path','schedule','licensenumber')
 			->join('doctor_schedule','users.id','=','doctor_schedule.uid')
 			->where('users.id',$doctor['doctor_id'])
 			->first();
+			$licenseEncrypter = $this->container['changeLicense'];
 
+			$profile['licensenumber'] = $licenseEncrypter($profile['licensenumber']);
 			if($profile){
 				$this->response['data'] = $profile;
 				$this->response['status'] = true;
