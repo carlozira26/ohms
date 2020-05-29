@@ -73,10 +73,10 @@
 									<v-text-field label="Street" :rules="[formRules.required]" v-model="userData.street"/>
 								</v-flex>
 								<v-flex xs6 sm6 md6 class="pa-1">
-									<v-text-field label="Barangay" :rules="[formRules.required]" v-model="userData.barangay"/>
+									<v-select label="Barangay" :rules="[formRules.required]" :items="barangayList" item-text="barangay" v-model="userData.barangay"></v-select>
 								</v-flex>
 								<v-flex xs6 sm6 md6 class="pa-1">
-									<v-text-field label="Municipality/City" :rules="[formRules.required]" v-model="userData.city"/>
+									<v-text-field label="Municipality/City" :rules="[formRules.required]" readonly v-model="userData.city"/>
 								</v-flex>
 
 								<v-flex xs12 md12 class="pa-1">
@@ -118,6 +118,7 @@
 				this.userid = VueCookies.get(this.cookieKey).data.id;
 				this.dialog = true;
 				this.fetchProfile();
+				this.fetchBarangayList();
 			});
 		},
 		data: function(){
@@ -136,6 +137,7 @@
 				message : '',
 				icon : '',
 				snackBarColor : '',
+				barangayList : [],
 			}
 		}, 
 		methods : {
@@ -162,7 +164,6 @@
 					if(res.data.status){
 						_this.userData = res.data.data;
 						_this.dateofbirth = _this.userData.dateofbirth;
-						console.log(_this.userData);
 					}
 				});
 			},
@@ -202,8 +203,22 @@
 						_this.dialog = false;
 					}
 				});
+			},
+			fetchBarangayList : function(){
+				let _this = this;
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/users/barangay')
+				.then(function(res){
+					_this.barangayList = res.data.data;
+				});
 			}
-		}
+		},
+
 	};
 </script>
 <style>

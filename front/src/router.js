@@ -1,5 +1,5 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import Vue from 'vue';
+import Router from 'vue-router';
 import mixins from './mixins';
 import VueCookies from 'vue-cookies';
 import LoginModule from './components/login.vue';

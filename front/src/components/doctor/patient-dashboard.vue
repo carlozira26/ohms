@@ -71,7 +71,8 @@
                                                                 <template v-else>
                                                                     <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
                                                                 </template> -->
-                                                                <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
+                                                                <v-icon v-if="medicine.selected == true" color="green darken-3">fas fa-dot-circle</v-icon>
+                                                                <v-icon v-else color="red darken-3">far fa-dot-circle</v-icon>
                                                             </v-list-tile-action>
                                                             {{medicine.name}}
                                                             <!-- <v-spacer></v-spacer>
@@ -163,6 +164,7 @@ export default {
         events: [],
         todaysMedicine : [],
         checkedMedicines : [],
+        medicineSchedule : [],
     }),
     computed: {
         eventsMap () {
@@ -208,7 +210,6 @@ export default {
             })
             .get('/medicine/patient/schedule/'+id)
             .then(function(res){
-                _this.arrayEvents = res.data.dates;
                 _this.medicineSchedule = res.data.data;
                 _this.plotCalendarEvents();
                 _this.getMedicineVal();
@@ -281,7 +282,6 @@ export default {
             }
         },
         getInstructions : async (medicine, url, token) =>{
-
             return axios.create({
                 baseURL : url,
                 headers : {

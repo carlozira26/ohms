@@ -219,10 +219,10 @@
 								<v-text-field label="Street" :rules="[formRules.required]" v-model="street"/>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="Barangay" :rules="[formRules.required]" v-model="barangay"/>
+								<v-select label="Barangay" :items="barangayList" item-text="barangay" :rules="[formRules.required]" v-model="barangay"></v-select>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="Municipality/City" :rules="[formRules.required]" v-model="city"/>
+								<v-text-field label="Municipality/City" readonly :rules="[formRules.required]" v-model="city"/>
 							</v-flex>
 							<v-flex xs12 md12 class="pa-1">
 								<v-textarea label="Remarks" solo v-model="remarks"></v-textarea>
@@ -309,6 +309,7 @@
 			}
 			this.getDate();
 			this.loadPatients();
+			this.fetchBarangayList();
 			this.eventHub.$on('showSnackBar', val =>{
 				this.icon = val.icon;
 				this.snackBarColor = val.color;
@@ -363,7 +364,7 @@
 				address: "",
 				street: "",
 				barangay: "",
-				city: "",
+				city: "Mandaluyong City",
 				remarks: "",
 				username: "",
 				password: "",
@@ -373,7 +374,7 @@
 				filterIcon : "",
 				filterCount: 0,
 				sortType : "",
-
+				barangayList : [],
 			}
 		},
 		methods : {
@@ -466,6 +467,7 @@
 					this.getDate();
 					this.patientstatus = "New";
 					this.drtb = "Yes";
+					this.city = "Mandaluyong City";
 				}, 1);
 				
 			},
@@ -577,6 +579,19 @@
 				}
 				this.loadPatients();
 			},
+			fetchBarangayList : function(){
+				let _this = this;
+				axios.create({
+					baseURL : this.apiUrl,
+					headers : {
+						'Authorization' : `Bearer ${this.token}`
+					}
+				})
+				.get('/users/barangay')
+				.then(function(res){
+					_this.barangayList = res.data.data;
+				});
+			}
 		}
 	};
 </script>

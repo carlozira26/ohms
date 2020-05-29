@@ -19,7 +19,7 @@
 								<v-select label="Medicine" :items="medicineSelect" item-value="id" item-text="medicinename" v-model="medicine.medicineID" :rules="[formRules.required]" @change="addInstructions(medicine.medicineID,index)"></v-select>
 							</v-flex>
 							<v-flex xs2 md2 class="pa-1">
-								<v-text-field label="Dosage" :rules="[formRules.required]" v-model="medicine.medicineDosage"></v-text-field>
+								<v-text-field label="ML" :rules="[formRules.required]" v-model="medicine.medicineDosage"></v-text-field>
 							</v-flex>
 							<v-flex xs2 md3 class="pa-1">
 								<v-text-field label="Pieces" :rules="[formRules.required]" v-model="medicine.medicinePieces"></v-text-field>

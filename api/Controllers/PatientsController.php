@@ -5,6 +5,7 @@ use Models\UsersModel;
 use Models\PatientLogsModel;
 use Models\DiagnosticLogsModel;
 use Models\PatientIntakeModel;
+use Models\BarangayModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -25,6 +26,23 @@ class PatientsController{
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
 		$this->response['data'] = $user;
 		$this->response['status'] = true;
+
+		return $this->container->response->withJson($this->response);
+	}
+	public function patientAppList($req, $res, $args){
+		$data = $req->getQueryParams();
+		$search = $data['search'];
+		$patientList = PatientsModel::whereRaw('status in ("New","Ongoing")');
+		if(isset($search)){
+			$patientList = $patientList->where('patient_id','like','%'.$search.'%');
+			$patientList = $patientList->orWhere('firstname','like','%'.$search.'%');
+			$patientList = $patientList->orWhere('lastname','like','%'.$search.'%');
+		}
+		$patientList = $patientList->get();
+		if($patientList){
+			$this->response['data'] = $patientList;
+			$this->response['status'] = true;
+		}
 
 		return $this->container->response->withJson($this->response);
 	}
@@ -504,6 +522,12 @@ class PatientsController{
 			->whereRaw('cast(patient_logs.created_at as date) between "'.$datefrom.'" and "'.$dateto.'"')
 			->orderBy('created_at','desc')->get();
 		$this->response['data'] = $patients;
+		return $this->container->response->withJson($this->response);
+	}
+	public function FetchBarangayList($req, $res, $args){
+		$barangayList = BarangayModel::select('barangay')->get();
+		$this->response['data'] = $barangayList;
+		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
 }

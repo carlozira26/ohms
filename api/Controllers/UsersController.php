@@ -90,6 +90,25 @@ class UsersController{
 		}
 		return $this->container->response->withJson($this->response);
 	}
+	public function UserAppAuth($req, $res,$args){
+		$body = $req->getParsedBody();
+		$username = $body['email'];
+		$user = $this->authenticateEmailPassword($username, $body['password']);
+		$fullname = $user->firstname." ".$user->lastname;
+		$this->response['token'] = JWT::encode(
+			$user->token,
+			$this->container["settings"]["jwt"]
+		);
+
+		$this->response['data'] = array(
+			'id' => $user->id,
+			'fullname' => ucwords(strtolower($fullname))
+		);
+		
+		$this->response['status'] = (!isset($user)) ? false : true;
+		$this->response['message'] = (!isset($user)) ? "Invalid Credential" : "";
+		return $this->container->response->withJson($this->response);
+	}
 	public function UserAccount($request, $response, $args){
 		$id = $args['id'];
 		$userDetails = UsersModel::select('firstname','middlename','lastname','birthdate','gender','contact_number','licensenumber','specialization','subspecialization','clinic_name','clinic_address','email','image_path')->where('id',$id)->first();

@@ -242,8 +242,12 @@ class MedicinesController{
 		return $arr;
 	}
 	public function getMedicineVal($req, $res, $args){
+		$body = $req->getQueryParams();
+
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$id = (isset($body['id'])) ? $body['id'] : $user['id'];
+
 		$date = date('Y-m-d');
 		$val = IntakeLogsModel::select('intake_value')
 			->where('patient_id',$user['id'])
@@ -258,9 +262,14 @@ class MedicinesController{
 	public function newMedicineVal($req, $res, $args){
 		$body = $req->getParsedBody();
 		$newVal = implode(",",json_decode($body['newVal']));
+		
 		$medicinename = $body['medicinename'];
+		$medicine_index = (isset($body['medicineindex'])) ? $body['medicineindex'] : "";
+		$reason = (isset($body['reason'])) ? $body['reason'] : "";
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+
+		$id = (isset($body['id'])) ? $body['id'] : $user['id'];
 		$date = date('Y-m-d');
 		if($body['type']=='create'){
 			IntakeLogsModel::create(array(
@@ -269,15 +278,32 @@ class MedicinesController{
 				'date_intake' => $date
 			));
 		}else{
-			IntakeLogsModel::where('patient_id',$user['id'])
+			IntakeLogsModel::where('patient_id',$id)
 				->where('date_intake',$date)
 				->update(array(
 				'intake_value' => $newVal,
 			));
-			PatientIntakeModel::create(array(
-				'medicine' => $medicinename,
-				'patient_id' => $user['id']
-			));
+			$check = PatientIntakeModel::where('patient_id', $id)
+				->where('medicine_index', $medicine_index)
+				->where('medicine', $medicinename)
+				->whereRaw('cast(created_at as date) = "'.$date.'"')
+				->first();
+			if($check){
+				PatientIntakeModel::where('patient_id', $id)
+				->where('medicine_index', $medicine_index)
+				->where('medicine', $medicinename)
+				->whereRaw('cast(created_at as date)="'.$date.'"')
+				->update(array(
+					'reason' => $reason
+				));
+			}else{
+				PatientIntakeModel::create(array(
+					'patient_id' => $id,
+					'medicine_index' => $medicine_index,
+					'medicine' => $medicinename,
+					'reason' => $reason
+				));
+			}
 		}
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
@@ -287,5 +313,17 @@ class MedicinesController{
 		$instruction = MedicinesModel::select("instructions")->whereRaw('concat(brandname,":",genericname) = "'.$medicineName.'"')->first();
 		
 		return $this->container->response->withJson($instruction['instructions']);
+	}
+	public function checkReason($req, $res, $args){
+		$data = $req->getQueryParams();
+		$date = date('Y-m-d');
+		$logs = PatientIntakeModel::select('medicine_index','reason')
+			->where('patient_id', $data['patientid'])
+			->whereRaw('cast(created_at as date)="'.$date.'"')
+			->orderBy('medicine_index','asc')
+			->get();
+		$this->response['data'] = $logs;
+		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
 	}
 }

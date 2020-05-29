@@ -16,3 +16,5 @@ $app->get('/patient/count', 'PatientsController:countPatients');
 $app->get('/patient/medicinelogs', 'PatientsController:fetchIntakeLogs');
 $app->get('/patient/profile','PatientsController:PatientProfile');
 $app->get('/patients/outcomes/fetch','PatientsController:fetchPatientList');
+
+$app->get('/patients/app/list', 'PatientsController:patientAppList');

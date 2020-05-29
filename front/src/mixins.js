@@ -3,7 +3,6 @@ import VueCookies from 'vue-cookies';
 const eventHub = new Vue();
 
 export default {
-
     watch : {
 
     },
@@ -27,8 +26,8 @@ export default {
     data : function(){
         return {
             cookieKey : 'ohmscookiekey',
-            apiUrl : 'http://122.53.152.8/ohms/api',
-            // apiUrl : 'http://localhost/ohms/api',
+            // apiUrl : 'http://122.53.152.8/ohms/api',
+            apiUrl : 'http://localhost/ohms/api',
             websocket : 'ws://122.53.152.8:3552/',
             token : '',
             eventHub: eventHub,

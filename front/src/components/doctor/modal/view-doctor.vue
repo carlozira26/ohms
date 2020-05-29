@@ -23,7 +23,7 @@
 							<v-flex xs8 sm8 md9 class="text-sm-left text-xs-left">
 								<v-flex md12 style="margin-left:10px">
 									<div class="title">
-										Doctor {{userData.firstname + " " + userData.lastname}}
+										Dr. {{userData.firstname + " " + userData.lastname}}
 									</div>
 									<div class="subheading text-xs-left">
 										{{ userData.specialization }} - {{userData.subspecialization}}
