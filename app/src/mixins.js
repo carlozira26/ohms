@@ -1,6 +1,9 @@
 import Vue from 'vue';
 import VueCookies from 'vue-cookies';
 const eventHub = new Vue();
+import moment from 'moment-timezone';
+
+moment.tz.setDefault('Asia/Manila');
 
 export default {
 
@@ -23,8 +26,8 @@ export default {
     data : function(){
         return {
             cookieKey : 'ohmscookiekey',
-            // apiUrl : 'http://122.53.152.8/ohms/api',
-            apiUrl : 'http://localhost/ohms/api',
+            apiUrl : 'http://122.53.152.8/ohms/api',
+            // apiUrl : 'http://localhost/ohms/api',
             token : '',
             eventHub: eventHub,
             userData : {},
@@ -35,7 +38,7 @@ export default {
             },
             globalLoading : false,
             wsconnect : '',
-            today : new Date().toISOString().substr(0,10),
+            today : moment().format('YYYY-MM-DD'),
         }
     }, 
     methods : {

@@ -54,8 +54,8 @@
 							<tr v-for="(tmedicinelist,i) in todaysMedicine[0].medicine" :key="i">
 								<td>{{ tmedicinelist.name }}</td>
 								<td v-if="tmedicinelist.selected == true">
-									<v-btn icon small class="grey" disabled color="white--text"><v-icon>check</v-icon></v-btn>
-									<v-btn icon small class="grey" disabled color="white--text"><v-icon>close</v-icon></v-btn>
+									<v-btn icon small class="grey" disabled><v-icon class="white--text">check</v-icon></v-btn>
+									<v-btn icon small class="grey" disabled><v-icon class="white--text">close</v-icon></v-btn>
 								</td>
 								<td v-else>
 									<v-btn icon small class="green darken-4" color="white--text" @click="takeMedicine(i,tmedicinelist.name,true)"><v-icon>check</v-icon></v-btn>
@@ -143,8 +143,9 @@ import axios from 'axios';
 						'Authorization' : `Bearer ${this.token}`
 					}
 				})
-				.get('/medicine/value')
+				.get('/medicine/value?id='+this.patient.id)
 				.then(function(res){
+					_this.checkedMedicines = [];
 					if(res.data.status){
 						_this.checkedMedicines = res.data.data.intake_value.split(",");
 					}
@@ -170,7 +171,8 @@ import axios from 'axios';
 								if(_this.checkedMedicines[y] == "Y"){
 									sel = true;
 								}
-								list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
+								let data = { name : _this.medicineSchedule[_this.today][key][medicine], selected : sel };
+								list.push(data);
 							}else{
 								val.push("N");
 								list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
@@ -205,8 +207,10 @@ import axios from 'axios';
 					}
 				})
 				.post('/medicine/newvalue',formData);
+				this.reason = "";
 			},
 			takeMedicine : function(i,medicinename,status){
+				this.data = []
 				this.data['index'] = i;
 				this.data['medicinename'] = medicinename;
 				this.data['status'] = status;
@@ -230,9 +234,9 @@ import axios from 'axios';
 				.get('/medicine/logs/reason?patientid='+this.patient.id)
 				.then(function(res){
 					let reason = res.data.data;
-					for(let x in _this.todaysMedicine){
+					for(let x in _this.todaysMedicine[0].medicine){
 						if(reason[x]){
-							_this.todaysMedicine[x].medicine[0].selected = true;
+							_this.todaysMedicine[0].medicine[reason[x].medicine_index].selected = true;
 						}
 					}
 				});

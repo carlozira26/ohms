@@ -250,7 +250,7 @@ class MedicinesController{
 
 		$date = date('Y-m-d');
 		$val = IntakeLogsModel::select('intake_value')
-			->where('patient_id',$user['id'])
+			->where('patient_id',$id)
 			->where('date_intake',$date)
 			->first();
 		if($val){
@@ -273,7 +273,7 @@ class MedicinesController{
 		$date = date('Y-m-d');
 		if($body['type']=='create'){
 			IntakeLogsModel::create(array(
-				'patient_id' => $user['id'],
+				'patient_id' => $id,
 				'intake_value' => $newVal,
 				'date_intake' => $date
 			));
