@@ -64,8 +64,8 @@
 	</div>
 </template>
 <script>
-	import VueApexCharts from 'vue-apexcharts';
 	import Vue from 'vue';
+	import VueApexCharts from 'vue-apexcharts';
 	import ApexCharts from "apexcharts";
 	import axios from 'axios';
 	import JsonExcel from 'vue-json-excel';

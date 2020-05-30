@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import VueCookies from 'vue-cookies';
 const eventHub = new Vue();
-
+import moment from 'moment';
 export default {
     watch : {
 
@@ -106,6 +106,9 @@ export default {
         changeLicenseFormat: function(id = ''){
             var idFormat = id.substr(0,2)+"-"+id.substr(2,7);
             return idFormat;
+        },
+        formatDate : function(date){
+            return moment(date).format('MMM DD, YYYY');
         }
     }
 };

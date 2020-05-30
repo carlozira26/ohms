@@ -189,7 +189,7 @@
 								<v-text-field label="Age" v-model="age" type="text" readonly/>
 							</v-flex>
 							<v-flex xs9 md4 class="pa-1">
-								<v-text-field label="Date of Consultation" v-model="consultationDate" type="text" readonly/>
+								<v-text-field label="Date of Consultation" :value="formatDate(consultationDate)" type="text" readonly/>
 							</v-flex>
 							<v-flex xs3 md2 class="pa-1">
 								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="patientgender"/>
