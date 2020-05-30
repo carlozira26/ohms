@@ -73,7 +73,7 @@
 														<v-list-tile-title>Edit Details</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('assignDoctor',patient.id)">
+													<v-list-tile @click="openModal('assignDoctor',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-user-nurse</v-icon>
 														</v-list-tile-avatar>
@@ -81,21 +81,21 @@
 														<v-list-tile-title v-else>Reassign Doctor</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('showHealthTracker',patient.id)">
+													<v-list-tile @click="openModal('showHealthTracker',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-file-contract</v-icon>
 														</v-list-tile-avatar>
 														<v-list-tile-title>Healthcare Monitoring</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('showLabResults',patient.id)">
+													<v-list-tile @click="openModal('showLabResults',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-file-medical-alt</v-icon>
 														</v-list-tile-avatar>
 														<v-list-tile-title>Laboratory Results</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('showScheduler',patient.id)">
+													<v-list-tile @click="openModal('showScheduler',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-calendar-alt</v-icon>
 														</v-list-tile-avatar>
@@ -109,21 +109,21 @@
 														<v-list-tile-title>Message</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('showAddMedicine',patient.id)">
+													<v-list-tile @click="openModal('showAddMedicine',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-pills</v-icon>
 														</v-list-tile-avatar>
 														<v-list-tile-title>Add Medicine</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('viewLogs',patient.id)">
+													<v-list-tile @click="openModal('viewLogs',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-history</v-icon>
 														</v-list-tile-avatar>
 														<v-list-tile-title>Intake History</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('archivePatient',patient.id)">
+													<v-list-tile @click="openModal('archivePatient',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-archive</v-icon>
 														</v-list-tile-avatar>
@@ -159,27 +159,27 @@
 						<v-divider class="mb-2 mt-2"></v-divider>
 						<v-layout row wrap>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="firstName" type="text"/>
+								<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="patient.firstname" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Middle Name" :rules="[formRules.required,formRules.textOnly]" v-model="middleName" type="text"/>
+								<v-text-field label="Middle Name" :rules="[formRules.required,formRules.textOnly]" v-model="patient.middlename" type="text"/>
 							</v-flex>
 							<v-flex xs12 md4 class="pa-1">
-								<v-text-field label="Last Name" :rules="[formRules.required,formRules.textOnly]" v-model="lastName" type="text"/>
+								<v-text-field label="Last Name" :rules="[formRules.required,formRules.textOnly]" v-model="patient.lastname" type="text"/>
 							</v-flex>
 							<v-flex xs12 md6 class="pa-1">
-								<v-text-field label="Username" type="text" v-model="username" :rules="[formRules.required]"/>
+								<v-text-field label="Username" type="text" v-model="patient.username" :rules="[formRules.required]"/>
 							</v-flex>
 							<v-flex xs12 md6 class="pa-1">
-								<v-text-field label="Password" hint="Password is defaulted to the Patient's Birthday" persistent-hint v-model="password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
+								<v-text-field label="Password" hint="Password is defaulted to the Patient's Birthday" persistent-hint v-model="patient.password" @click:append="showHide = !showHide" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" readonly/>
 							</v-flex>
 							<v-flex xs9 md4 class="pa-1">
 								<template>
 									<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
 										<template v-slot:activator="{ on }">
-											<v-text-field label="Date of Birth" readonly v-on="on" v-model="dateofBirth" @change="save" type="text" :rules="[formRules.required]"/>
+											<v-text-field label="Date of Birth" readonly v-on="on" :value="formatDate(patient.dateofBirth)" @change="save" type="text" :rules="[formRules.required]"/>
 										</template>
-										<v-date-picker color="green darken-4" ref="picker" v-model="dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
+										<v-date-picker color="green darken-4" ref="picker" v-model="patient.dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
 											<v-btn @click="menu = false" dark block>Close</v-btn>
 										</v-date-picker>
 									</v-menu>
@@ -189,43 +189,38 @@
 								<v-text-field label="Age" v-model="age" type="text" readonly/>
 							</v-flex>
 							<v-flex xs9 md4 class="pa-1">
-								<v-text-field label="Date of Consultation" :value="formatDate(consultationDate)" type="text" readonly/>
+								<v-text-field label="Date of Consultation" :value="formatDate(patient.consultationdate)" type="text" readonly/>
 							</v-flex>
 							<v-flex xs3 md2 class="pa-1">
-								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="patientgender"/>
+								<v-select label="Gender" :items="gender" :rules="[formRules.required]" v-model="patient.gender"/>
 							</v-flex>
 							<v-flex xs4 md4 class="pa-1">
-								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="mobilenumber"/>
+								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="patient.mobilenumber"/>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
 								<v-text-field label="Status" v-model="patientstatus" readonly></v-text-field>
 								<!-- <v-select label="Status" :items="status" v-model="patientstatus"/> -->
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-select label="DR-TB" :items="presumptive" v-model="drtb"/>
+								<v-select label="DR-TB" :items="presumptive" v-model="patient.drtb"/>
 							</v-flex>
 							<v-flex xs2 md2 class="pa-1">
-								<template v-if="drtb=='Yes'">
-									<v-select label="TB Category" :items="category" v-model="tbcategory"></v-select>
-								</template>
-								<template v-else>
-									<v-select label="TB Category" :items="category" disabled></v-select>
-								</template>
+								<v-select label="TB Category" :items="category" :rules="[formRules.required]" v-model="patient.category"></v-select>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="House Number" :rules="[formRules.required]" v-model="address"/>
+								<v-text-field label="House Number" :rules="[formRules.required]" v-model="patient.address"/>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="Street" :rules="[formRules.required]" v-model="street"/>
+								<v-text-field label="Street" :rules="[formRules.required]" v-model="patient.street"/>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-select label="Barangay" :items="barangayList" item-text="barangay" :rules="[formRules.required]" v-model="barangay"></v-select>
+								<v-select label="Barangay" :items="barangayList" item-text="barangay" :rules="[formRules.required]" v-model="patient.barangay"></v-select>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="Municipality/City" readonly :rules="[formRules.required]" v-model="city"/>
+								<v-text-field label="Municipality/City" readonly :rules="[formRules.required]" v-model="patient.city"/>
 							</v-flex>
 							<v-flex xs12 md12 class="pa-1">
-								<v-textarea label="Remarks" solo v-model="remarks"></v-textarea>
+								<v-textarea label="Remarks" solo v-model="patient.remarks"></v-textarea>
 							</v-flex>
 						</v-layout>
 					</v-form>
@@ -293,10 +288,10 @@
 			'lab-results' : labResults,
 		},
 		watch : {
-			dateofBirth : function(){
-				if(this.dateofBirth){
-					this.password = this.dateofBirth.split("-").join("");
-					this.age = this.getBirthAge(this.dateofBirth);
+			patient : function(){
+				if(this.patient.dateofbirth){
+					this.patient.password = this.patient.dateofbirth.split("-").join("");
+					this.age = this.getBirthAge(this.patient.dateofbirth);
 				}
 			},
 		},
@@ -350,6 +345,8 @@
 
 				age: 0,
 				id: null,
+				patient : [],
+
 				patientID : "",
 				firstName: "",
 				middleName: "",
@@ -396,22 +393,22 @@
 						formData.append('patientid', _this.patientID);
 					}
 					formData.append('type', _this.formType);
-					formData.append('firstname', _this.firstName);
-					formData.append('middlename', _this.middleName);
-					formData.append('lastname', _this.lastName);
-					formData.append('dateofbirth', _this.dateofBirth);
-					formData.append('consultationdate', _this.consultationDate);
-					formData.append('gender', _this.patientgender);
-					formData.append('mobilenumber', _this.mobilenumber);
-					formData.append('drtb', _this.drtb);
-					formData.append('category',_this.tbcategory);
-					formData.append('address', _this.address);
-					formData.append('street', _this.street);
-					formData.append('barangay', _this.barangay);
-					formData.append('city', _this.city);
-					formData.append('remarks', _this.remarks);
-					formData.append('username', _this.username);
-					formData.append('password', _this.password);
+					formData.append('firstname', _this.patient.firstname);
+					formData.append('middlename', _this.patient.middlename);
+					formData.append('lastname', _this.patient.lastname);
+					formData.append('dateofbirth', _this.patient.dateofbirth);
+					formData.append('consultationdate', _this.patient.consultationdate);
+					formData.append('gender', _this.patient.gender);
+					formData.append('mobilenumber', _this.patient.mobilenumber);
+					formData.append('drtb', _this.patient.drtb);
+					formData.append('category',_this.patient.category);
+					formData.append('address', _this.patient.address);
+					formData.append('street', _this.patient.street);
+					formData.append('barangay', _this.patient.barangay);
+					formData.append('city', _this.patient.city);
+					formData.append('remarks', _this.patient.remarks);
+					formData.append('username', _this.patient.username);
+					formData.append('password', _this.patient.password);
 
 					axios.create({
 						baseURL : _this.apiUrl,
@@ -458,8 +455,8 @@
 				let patientdetails = this.patientList[index];
 				this.eventHub.$emit(modal, {'wsconnect': this.wsconnect ,'patientDetails': patientdetails});
 			},
-			openModal : function(modal,patientID){
-				this.eventHub.$emit(modal, {'patientID': patientID});
+			openModal : function(modal,index){
+				this.eventHub.$emit(modal, {'id': this.patientList[index].id, 'status' : this.patientList[index].status, 'category' : this.patientList[index].category});
 			},
 			resetForm(){
 				this.$refs.vForm.reset();
@@ -481,23 +478,8 @@
 				}else{
 					this.title = "Edit Patient";
 					this.id = this.patientList[index].id;
-					this.patientID = this.patientList[index].patient_id;
-					this.firstName = this.patientList[index].firstname;
-					this.middleName = this.patientList[index].middlename;
-					this.lastName = this.patientList[index].lastname;
-					this.username = this.patientList[index].username;
-					this.dateofBirth = this.patientList[index].dateofbirth;
-					this.consultationDate = this.patientList[index].consultationdate;
-					this.patientgender = this.patientList[index].gender;
-					this.mobilenumber = this.patientList[index].mobilenumber;
-					this.patientstatus = this.patientList[index].status;
-					this.drtb = this.patientList[index].drtb;
-					this.tbcategory = this.patientList[index].category;
-					this.address = this.patientList[index].address;
-					this.street = this.patientList[index].street;
-					this.barangay = this.patientList[index].barangay;
-					this.city = this.patientList[index].city;
-					this.remarks = this.patientList[index].remarks;
+					this.patient = this.patientList[index];
+					this.patient['city'] = "Mandaluyong City";
 				}
 				this.patientDetails = true;
 			},

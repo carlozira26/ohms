@@ -107,7 +107,9 @@ class MedicinesController{
 	}
 
 	public function getMedicineList($request, $response, $args) {
-		$medicineList = MedicinesModel::selectRaw("id,concat(brandname,':',genericname) as medicinename,instructions")->where('is_active','Y')->get();
+		$medicineList = MedicinesModel::selectRaw("id,concat(brandname,':',genericname) as medicinename")
+			->where('is_active','Y')
+			->get();
 		$this->response['data'] = $medicineList;
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
@@ -155,13 +157,30 @@ class MedicinesController{
 		return $this->container->response->withJson($this->response);
 	}
 	public function getPatientMedicine($request, $response, $args){
-		$patientID = $args['id'];
-		$patientMedicine = PatientMedicinesModel::selectRaw("patient_medicine.medicineid,concat(brandname,':',genericname)as medicinename,dosage,pieces,instructions")
-			->join('medicines','medicines.id','=','patient_medicine.medicineid')
-			->where('uid',$patientID)
-			->where('patient_medicine.is_active','Y')
-			->get();
-		return $this->container->response->withJson($patientMedicine);
+		$data = $request->getQueryParams();
+		if($data['status'] == 'New'){
+			$medicineList = MedicinesModel::selectRaw("id,concat(brandname,':',genericname) as medicinename");
+
+			if($data['category'] == 'Cat I'){
+				$medicineList = $medicineList->selectRaw('cat1 as dosage');
+			}else if($data['category'] == 'Cat II'){
+				$medicineList = $medicineList->selectRaw('cat2 as dosage');
+			}else{
+				$medicineList = $medicineList->selectRaw('mdr as dosage');
+			}
+			$medicineList = $medicineList->where('is_primary','Y')->get();
+		}else{
+			$medicineList = MedicinesModel::selectRaw("medicines.id as id,concat(brandname,':',genericname) as medicinename,dosage,pieces")
+				->join('patient_medicine','medicines.id','=','patient_medicine.medicineid')
+				->where('uid',$data['id'])
+				->get();
+		}
+		if($medicineList){
+			$this->response['data'] = $medicineList;
+			$this->response['status'] = true;
+		}
+
+		return $this->container->response->withJson($this->response);
 	}
 	public function getPatientMedicineSchedule($request, $response, $args){
 		$patientid = $args['id'];
