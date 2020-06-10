@@ -108,7 +108,14 @@ export default {
             return idFormat;
         },
         formatDate : function(date){
-            return moment(date).format('MMM DD, YYYY');
+            if(date!=null){
+                return moment(date).format('MM/DD/YYYY');
+            }
+        },
+        formatDateTime : function(datetime){
+            if(datetime!=null){
+                return moment(datetime).format('MM/DD/YYYY, h:mm:ss A');
+            }
         }
     }
 };

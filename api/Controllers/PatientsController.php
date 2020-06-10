@@ -1,11 +1,13 @@
 <?php 
 namespace Controllers;
 use Models\PatientsModel;
+use Models\PatientMedicinesModel;
 use Models\UsersModel;
 use Models\PatientLogsModel;
 use Models\DiagnosticLogsModel;
 use Models\PatientIntakeModel;
 use Models\BarangayModel;
+use Models\MedicinesModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -31,12 +33,14 @@ class PatientsController{
 	}
 	public function patientAppList($req, $res, $args){
 		$data = $req->getQueryParams();
+		$ldate = date('l',strtotime(date('Y-m-d')));
 		$search = $data['search'];
-		$patientList = PatientsModel::whereRaw('status in ("New","Ongoing")');
-		if(isset($search)){
-			$patientList = $patientList->where('patient_id','like','%'.$search.'%');
-			$patientList = $patientList->orWhere('firstname','like','%'.$search.'%');
-			$patientList = $patientList->orWhere('lastname','like','%'.$search.'%');
+		$patientList = PatientsModel::where('status','Ongoing')
+			->where('medicine_schedule','like','%'.$ldate.'%');
+		if(isset($search) && $search != ""){
+			$patientList = $patientList->where('patient_id',$search);
+			$patientList = $patientList->orWhere('firstname',$search);
+			$patientList = $patientList->orWhere('lastname',$search);
 		}
 		$patientList = $patientList->get();
 		if($patientList){
@@ -177,7 +181,6 @@ class PatientsController{
 		if(!empty($status)){
 			$patientList = $patientList
 			->where('status',$status);
-			
 			$patientCount = $patientCount
 			->where('status',$status);
 		}
@@ -205,12 +208,18 @@ class PatientsController{
 				lastname LIKE "%'.$_GET['search'].'%")');
 			
 		}else{
-			$patientList = $patientList
-			->offset($offset)
-			->limit($limit);
+			if(empty($status)){
+				$patientList = $patientList
+				->whereRaw("status in ('New', 'Ongoing')")
+				->offset($offset)
+				->limit($limit);
+				$patientCount = $patientCount
+				->whereRaw("status in ('New', 'Ongoing')");
+			}
 		}
 
 		$patientList = $patientList
+			->orderBy('patient_id','desc')
 			->limit($limit)
 			->get();
 		$patientCount = $patientCount->first();
@@ -250,6 +259,7 @@ class PatientsController{
 
 		$reason = (isset($body['reason'])) ? $body['reason'] : ""; 
 		PatientsModel::where('id',$id)->update(array('status' => $body['status']));
+		PatientMedicinesModel::where('uid',$id)->update(array('is_active' => 'N'));
 		PatientLogsModel::create(array(
 			'uid' => $id,
 			'status' => $body['status'],
@@ -261,15 +271,15 @@ class PatientsController{
 		return $this->container->response->withJson($this->response);
 	}
 	public function fetchDiagnosticResults($req, $res, $args){
-		$id = $_GET['patientid'];
+		$data = $req->getQueryParams();
 		$limit = 8;
-		$offset = ($_GET['page'] - 1) * $limit;
-		$patientDiagnostic = DiagnosticLogsModel::where( 'patient_id',$id )
-			->orderBy('created_at','asc')
+		$offset = ($data['page'] - 1) * $limit;
+		$patientDiagnostic = DiagnosticLogsModel::where( 'patient_id', $data['id'] )
+			->orderBy('created_at', 'desc')
 			->offset($offset)
 			->limit($limit)
 			->get();
-		$diagnosticCount = DiagnosticLogsModel::selectRaw("count(id) as count")->where( 'patient_id',$id )->first();
+		$diagnosticCount = DiagnosticLogsModel::selectRaw("count(id) as count")->where( 'patient_id',$data['id'] )->first();
 		$this->response['count'] = $diagnosticCount;
 		$this->response['data'] = $patientDiagnostic;
 		$this->response['status'] = true;
@@ -293,7 +303,7 @@ class PatientsController{
 		DiagnosticLogsModel::create(array(
 			'patient_id' => $body['patientid'],
 			'diagnostic_type' => $body['diagnostic'],
-			'result' => $body['result'],
+			'examination_date' => $body['examinationdate'],
 			'remarks' => $body['remarks'],
 			'image_location' => $imgpath	
 		));
@@ -416,7 +426,12 @@ class PatientsController{
 
 	public function fetchIntakeLogs($req, $res, $args){
 		$id = $_GET['id'];
-		$log = PatientIntakeModel::where('patient_id',$id)->get();
+		$log = PatientIntakeModel::selectRaw('status,date,created_at,concat(brandname,":",genericname) as medicine,reason')
+			->join('medicines','medicines.id','=','patient_intake.medicineid')
+			->where('patient_id',$id)
+			->orderBy('created_at','desc')
+			->get();
+
 		if(count($log) > 0){
 			$this->response['data'] = $log;
 			$this->response['status'] = true;
@@ -528,6 +543,39 @@ class PatientsController{
 		$barangayList = BarangayModel::select('barangay')->get();
 		$this->response['data'] = $barangayList;
 		$this->response['status'] = true;
+		return $this->container->response->withJson($this->response);
+	}
+	public function PatientAppMedicine($req, $res, $args){
+		$body = $req->getQueryParams();
+		$Utils = new Utils();
+		$user = $Utils->getPatientFromBearerToken($req, $this->container);
+		$id = (isset($body['id'])) ? $body['id'] : $user['id'];
+
+		$date = (isset($body['date']))? $body['date'] : date('Y-m-d');
+		$medicine = MedicinesModel::select('medicines.id','brandname','genericname')
+			->join('patient_medicine','medicines.id','=','patient_medicine.medicineid')
+			->where('uid',$id)
+			->where('patient_medicine.is_active','Y')
+			->get();
+
+		$intakelogs = PatientIntakeModel::select('medicineid','status','reason')
+			->where('patient_id',$id)
+			->where('date', $date)
+			->get();
+
+		foreach($medicine as $meds){
+			$is_taken = false;
+			foreach($intakelogs as $logs){
+				if($logs['medicineid'] == $meds['id']){
+					$is_taken = true;
+					$meds['status'] = $logs['status'];
+				}
+			}
+			$meds['is_taken'] = $is_taken;
+		}
+		$this->response['data'] = $medicine;
+		$this->response['status'] = true;
+		
 		return $this->container->response->withJson($this->response);
 	}
 }

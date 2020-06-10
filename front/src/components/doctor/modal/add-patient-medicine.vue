@@ -1,7 +1,6 @@
 <template>
 	<v-dialog v-model="medicine" content-class="modalHeight" scrollable>
 		<v-card>
-			<v-form ref="vForm" v-on:submit.prevent="submitMedicineList">
 				<v-card-title class="green darken-4">
 					<h1 class="white--text">Patient Medicine List</h1>
 					<v-spacer></v-spacer>
@@ -14,25 +13,27 @@
 				</v-card-title>
 				<template v-if="err==false">
 					<v-card-text>
-						<v-layout row wrap v-for="(medicine,index) in medicineList" :key="index">
-							<v-flex xs7 md6 class="pa-1">
-								<v-select label="Medicine" :items="medicineSelect" item-value="id" item-text="medicinename" v-model="medicine.medicineID" :rules="[formRules.required]" @change="addInstructions(medicine.medicineID,index)"></v-select>
-							</v-flex>
-							<v-flex xs2 md2 class="pa-1">
-								<v-text-field label="UL" :rules="[formRules.required]" v-model="medicine.medicineDosage" @focus="focusUL(index)" @blur="blurUL(index)" :value="medicine.medicineDosage"></v-text-field>
-							</v-flex>
-							<v-flex xs2 md3 class="pa-1">
-								<v-text-field label="Pieces" :rules="[formRules.required]" v-model="medicine.medicinePieces"></v-text-field>
-							</v-flex>
-							<v-flex xs1 md1 v-if ="index != 0">
-								<v-btn fab small icon @click="removeRow(index)"><v-icon color="red darken-4">close</v-icon></v-btn>
-							</v-flex>
-						</v-layout>
+						<v-form ref="vForm" v-on:submit.prevent="submitMedicineList">
+							<v-layout row wrap v-for="(medicine,index) in medicineList" :key="index">
+								<v-flex xs7 md6 class="pa-1">
+									<v-select label="Medicine" :items="medicineSelect" item-value="id" item-text="medicinename" v-model="medicine.medicineID" :rules="[formRules.required]" @change="addInstructions(medicine.medicineID,index)"></v-select>
+								</v-flex>
+								<v-flex xs2 md2 class="pa-1">
+									<v-select label="UM" :rules="[formRules.required]" :items="dosage" v-model="medicine.medicineDosage"></v-select>
+								</v-flex>
+								<v-flex xs2 md3 class="pa-1">
+									<v-text-field label="Pieces" :rules="[formRules.required]" v-model="medicine.medicinePieces"></v-text-field>
+								</v-flex>
+								<v-flex xs1 md1 v-if ="index != 0">
+									<v-btn flat icon @click="removeRow(index)"><v-icon small color="red darken-4">close</v-icon></v-btn>
+								</v-flex>
+							</v-layout>
+						</v-form>
 					</v-card-text>
 					<v-card-actions>
 						<v-spacer></v-spacer>
 						<template v-if="err==false">
-							<v-btn flat large type="submit">Save</v-btn>
+							<v-btn flat large type="submit" @click="submitMedicineList">Save</v-btn>
 							<v-btn flat large @click="medicine = false">Cancel</v-btn>
 						</template>
 					</v-card-actions>
@@ -47,7 +48,6 @@
 						</v-layout>
 					</v-card-text>
 				</template>
-			</v-form>
 		</v-card>
 	</v-dialog>
 </template>
@@ -56,7 +56,6 @@
 	export default {
 		created: function(){
 			this.eventHub.$on('showAddMedicine', val => {
-				
 				this.patient['id'] = val.id;
 				this.patient['status'] = val.status;
 				this.patient['category'] = val.category;
@@ -73,6 +72,7 @@
 				medicineSelect:[],
 				patient : [],
 				err : false,
+				dosage : ["5 mg", "10 mg", "15 mg"]
 			}
 		}, 
 		methods : {
@@ -159,30 +159,27 @@
 				if(this.$refs.vForm.validate()){
 					let _this = this,
 					formData = new FormData();
+					formData.append('id', _this.patient.id);
 					formData.append('patientMedicineList', JSON.stringify(_this.medicineList));
+					formData.append('category',this.patient.category);
 					axios.create({
 						baseURL : _this.apiUrl,
 						headers : {
 							'Authorization' : `Bearer ${this.token}`
 						}
 					})
-					.post('/medicine/list/submit/'+_this.patient.id,formData)
+					.post('/medicine/list/submit', formData)
 					.then(function(res){
 						let returnval = { message : "Patient's medicine has been saved!", icon : "done", color : "green"};
 						_this.eventHub.$emit("showSnackBar", returnval);
 						_this.medicine = false;
+						_this.eventHub.$emit("updatePatientList",{ 'patientID' : _this.patient.id, 'status' : _this.patient.status });
 					})
 				}else{
 					let returnval = { message : "Please fill-up all the required fields", icon : "error", color : "red"};
 					this.eventHub.$emit("showSnackBar", returnval);
 				}
 			},
-			focusUL : function(i){
-				this.medicineList[i].medicineDosage = this.medicineList[i].medicineDosage.replace(' mg/kg','');
-			},
-			blurUL : function(i){
-				this.medicineList[i].medicineDosage = this.medicineList[i].medicineDosage + ' mg/kg';
-			}
 		}
 	};
 </script>

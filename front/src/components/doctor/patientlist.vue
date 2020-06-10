@@ -24,8 +24,8 @@
 							<v-flex md10>
 								<v-text-field single-line prepend-icon="search" full-width hide-details @keyup="loadPatients" v-model="search" label="Search here ..."></v-text-field>
 							</v-flex>
-							<v-flex md2>
-								<v-select solo hide-details label="Status" :items="status" v-model="statusFilter" @change="loadPatients"></v-select>
+							<v-flex md2 class="pb-2 text-xs-left">
+								<v-select solo hide-details :items="status" v-model="statusFilter" @change="loadPatients"></v-select>
 							</v-flex>
 						</v-layout>
 						<table class="v-datatable v-table" style="border:1px solid #ddd">
@@ -116,18 +116,11 @@
 														<v-list-tile-title>Add Medicine</v-list-tile-title>
 													</v-list-tile>
 
-													<v-list-tile @click="openModal('viewLogs',index)">
+													<v-list-tile @click="openModal('viewIntakeLogs',index)">
 														<v-list-tile-avatar>
 															<v-icon>fa fa-history</v-icon>
 														</v-list-tile-avatar>
 														<v-list-tile-title>Intake History</v-list-tile-title>
-													</v-list-tile>
-
-													<v-list-tile @click="openModal('archivePatient',index)">
-														<v-list-tile-avatar>
-															<v-icon>fa fa-archive</v-icon>
-														</v-list-tile-avatar>
-														<v-list-tile-title>Archive</v-list-tile-title>
 													</v-list-tile>
 												</v-list>
 											</v-menu>
@@ -137,7 +130,9 @@
 								</template>
 							</tbody>
 						</table>
+						<div>
 						<v-pagination circle color="green darken-4" total-visible="8" v-model="pagination.page" :length="pagination.length" light @input="loadPatients"></v-pagination>
+					</div>
 					</v-card-text>
 					<v-card-actions>
 						<v-spacer></v-spacer>
@@ -177,7 +172,7 @@
 								<template>
 									<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
 										<template v-slot:activator="{ on }">
-											<v-text-field label="Date of Birth" readonly v-on="on" :value="formatDate(patient.dateofBirth)" @change="save" type="text" :rules="[formRules.required]"/>
+											<v-text-field label="Date of Birth" readonly v-on="on" :value="formatDate(patient.dateofbirth)" @change="save" type="text" :rules="[formRules.required]"/>
 										</template>
 										<v-date-picker color="green darken-4" ref="picker" v-model="patient.dateofBirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
 											<v-btn @click="menu = false" dark block>Close</v-btn>
@@ -198,7 +193,7 @@
 								<v-text-field label="Mobile Number" :rules="[formRules.phoneNumber, formRules.required]" v-model="patient.mobilenumber"/>
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
-								<v-text-field label="Status" v-model="patientstatus" readonly></v-text-field>
+								<v-text-field label="Status" v-model="patient.status" readonly></v-text-field>
 								<!-- <v-select label="Status" :items="status" v-model="patientstatus"/> -->
 							</v-flex>
 							<v-flex xs3 md3 class="pa-1">
@@ -264,7 +259,6 @@
 	<assign-doctor></assign-doctor>
 	<lab-results></lab-results>
 	<intake-logs></intake-logs>
-	
 	</div>
 </template>
 <script>
@@ -311,6 +305,17 @@
 				this.message = val.message;
 				this.sbar = true;
 			});
+
+			this.eventHub.$on('updatePatientList', val => {
+				for(let i in this.patientList){
+					if(this.patientList[i].id == val.patientID){
+						if(val.status == 'New'){
+							this.patientList[i].status = "Ongoing";
+							break;
+						}
+					}
+				}
+			});
 		},
 		data : function() {
 			return {
@@ -318,7 +323,7 @@
 				showHide: false,
 				phase : 1,
 				menu: false,
-				status: ["New", "Ongoing", "Success", "Discontinuation"],
+				status: ["","New", "Ongoing", "Success", "Discontinuation"],
 				statusFilter:"",
 				gender: ["Male", "Female"],
 				presumptive: ["Yes","No"],
@@ -456,7 +461,7 @@
 				this.eventHub.$emit(modal, {'wsconnect': this.wsconnect ,'patientDetails': patientdetails});
 			},
 			openModal : function(modal,index){
-				this.eventHub.$emit(modal, {'id': this.patientList[index].id, 'status' : this.patientList[index].status, 'category' : this.patientList[index].category});
+				this.eventHub.$emit(modal, {'id': this.patientList[index].id, 'status' : this.patientList[index].status, 'category' : this.patientList[index].category, 'data' : this.patientList[index]});
 			},
 			resetForm(){
 				this.$refs.vForm.reset();

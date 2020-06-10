@@ -18,3 +18,4 @@ $app->get('/patient/profile','PatientsController:PatientProfile');
 $app->get('/patients/outcomes/fetch','PatientsController:fetchPatientList');
 
 $app->get('/patients/app/list', 'PatientsController:patientAppList');
+$app->get('/patient/app/medicine', 'PatientsController:PatientAppMedicine');

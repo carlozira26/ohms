@@ -13,7 +13,7 @@ class DiagnosticLogsModel extends Model{
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "patient_id", "diagnostic_type", "result", "image_location", "remarks"
+    	"id", "patient_id", "examination_date", "diagnostic_type", "image_location", "remarks"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

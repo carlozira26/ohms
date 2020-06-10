@@ -13,7 +13,7 @@ class PatientIntakeModel extends Model{
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id","medicine_index", "medicine", "reason", "created_at", "patient_id"
+    	"id", "status", "medicineid", "reason", "date", "created_at", "patient_id"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

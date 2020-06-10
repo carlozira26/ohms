@@ -18,6 +18,12 @@
 			</table>
 		</v-container>
 		<patient></patient>
+		<v-snackbar v-model="snackbar" color="green darken-4">
+			{{ snackbarMessage }}
+			<v-btn icon @click="snackbar = false">
+				<v-icon>close</v-icon>
+			</v-btn>
+		</v-snackbar>
 	</div>
 </template>
 
@@ -33,12 +39,19 @@ export default {
 	mounted : function(){
 		this.token = VueCookies.get(this.cookieKey).token;
 		this.fetchPatients();
+		this.eventHub.$on('snackBar', val => {
+			console.log(val);
+			this.snackbarMessage = val;
+			this.snackbar = true;
+		});
 	},
 	data : function(){
 		return {
 			patientList : [],
 			dialog : false,
+			snackbar : false,
 			search : "",
+			snackbarMessage : "",
 		}
 	},
 	methods : {

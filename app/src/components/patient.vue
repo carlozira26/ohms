@@ -51,15 +51,14 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr v-for="(tmedicinelist,i) in todaysMedicine[0].medicine" :key="i">
-								<td>{{ tmedicinelist.name }}</td>
-								<td v-if="tmedicinelist.selected == true">
-									<v-btn icon small class="grey" disabled><v-icon class="white--text">check</v-icon></v-btn>
-									<v-btn icon small class="grey" disabled><v-icon class="white--text">close</v-icon></v-btn>
+							<tr v-for="(tmedicinelist,i) in todaysMedicine" :key="i">
+								<td>{{ tmedicinelist.brandname }} : {{ tmedicinelist.genericname }}</td>
+								<td v-if="tmedicinelist.is_taken == true">
+									{{ tmedicinelist.status }}
 								</td>
 								<td v-else>
-									<v-btn icon small class="green darken-4" color="white--text" @click="takeMedicine(i,tmedicinelist.name,true)"><v-icon>check</v-icon></v-btn>
-									<v-btn icon small class="error darken-4" color="white--text" @click="takeMedicine(i,tmedicinelist.name,false)"><v-icon>close</v-icon></v-btn>
+									<v-btn icon small class="green darken-4" color="white--text" @click="takeMedicine(i,true)"><v-icon>check</v-icon></v-btn>
+									<v-btn icon small class="error darken-4" color="white--text" @click="takeMedicine(i,false)"><v-icon>close</v-icon></v-btn>
 								</td>
 							</tr>
 						</tbody>
@@ -85,14 +84,10 @@
 				<v-card-actions>
 					<v-spacer></v-spacer>
 					<v-btn flat @click="dialog=true;reasonDialog=false">Cancel</v-btn>
-					<v-btn flat @click="newMedicineVal('update',data.medicinename);reasonDialog=false">Submit</v-btn>
+					<v-btn flat @click="newMedicineVal();reasonDialog=false">Submit</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
-		<v-snackbar v-model="sbar" boottom color="success">
-			Action has been done!
-			<v-btn flat color="white" @click.native="sbar = false"><v-icon>close</v-icon></v-btn>
-		</v-snackbar>
 	</div>
 </template>
 <script>
@@ -112,7 +107,6 @@ import axios from 'axios';
 				patient : [],
 				dialog : false,
 				reasonDialog : false,
-				sbar : false,
 				todaysMedicine : [],
 				checkedMedicines : [],
 				reason : "",
@@ -124,123 +118,55 @@ import axios from 'axios';
 			fetchPatientMedicine : function(){
 				let _this = this;
 				axios.create({
-					baseURL : _this.apiUrl,
+					baseURL : this.apiUrl,
 					headers : {
 						'Authorization' : `Bearer ${this.token}`
 					},
 				})
-				.get('/medicine/patient/schedule/'+this.patient.id)
+				.get('/patient/app/medicine?id='+this.patient.id)
 				.then(function(res){
-					_this.medicineSchedule = res.data.data;
-					_this.getMedicineVal();
+					_this.todaysMedicine = res.data.data;
 				});
 			},
-			getMedicineVal : function(){
-				let _this = this;
-				axios.create({
-					baseURL : this.apiUrl,
-					headers : {
-						'Authorization' : `Bearer ${this.token}`
-					}
-				})
-				.get('/medicine/value?id='+this.patient.id)
-				.then(function(res){
-					_this.checkedMedicines = [];
-					if(res.data.status){
-						_this.checkedMedicines = res.data.data.intake_value.split(",");
-					}
-					_this.todaysCheckList();
-					_this.fetchMedicineReason();
-				});
-			},
-			todaysCheckList : function(){
-				this.todaysMedicine = [];
-				let _this = this,
-				datelist = [],
-				val = [],
-				y = 0;
-				Object.keys(_this.medicineSchedule).forEach(function (key) {
-					datelist.push(key);
-				});
-				if(datelist.includes(_this.today)){
-					Object.keys(_this.medicineSchedule[_this.today]).sort().forEach(async function(key) {
-						let list = [];
-						for(let medicine in _this.medicineSchedule[_this.today][key]){ // tagged
-							let sel = false;
-							if(_this.checkedMedicines.length > 0){
-								if(_this.checkedMedicines[y] == "Y"){
-									sel = true;
-								}
-								let data = { name : _this.medicineSchedule[_this.today][key][medicine], selected : sel };
-								list.push(data);
-							}else{
-								val.push("N");
-								list.push({ name : _this.medicineSchedule[_this.today][key][medicine], selected : sel });
-							}
-							y = y+1;
-						}
-						_this.todaysMedicine.push({
-							time : key,
-							medicine : list,
-						});
-					}); 
-
-					if(_this.checkedMedicines.length == 0){
-						_this.checkedMedicines = val;
-						_this.newMedicineVal('create');
-					}
-				}
-			},
-			newMedicineVal : function(val, medicinename){
+			newMedicineVal : function(){
+				this.checkedMedicines.status = (this.checkedMedicines.is_taken==true) ? 'Done' : 'Declined';
 				let _this = this,
 				formData = new FormData();
-				formData.append('id',JSON.stringify(this.patient.id));
-				formData.append('medicineindex',this.data.index);
-				formData.append('newVal',JSON.stringify(this.checkedMedicines));
-				formData.append('medicinename',medicinename);
-				formData.append('type', val);
-				formData.append('reason', this.reason);
+				formData.append('patientid',this.patient.id);
+				formData.append('medicineid', this.checkedMedicines.id);
+				formData.append('reason',this.reason);
+				formData.append('status', this.checkedMedicines.status);
 				axios.create({
 					baseURL : this.apiUrl,
 					headers : {
 						'Authorization' : `Bearer ${this.token}`
 					}
 				})
-				.post('/medicine/newvalue',formData);
+				.post('/medicine/newvalue',formData)
+				.then(function(res){
+					_this.snackbarMessage = (_this.checkedMedicines.status=="Done")? "Medicine accepted!" : "Medicine declined!";
+					if(res.data.status){
+						_this.eventHub.$emit('snackBar', _this.snackbarMessage)
+					}
+					if(_this.checkedMedicines.status == 'Declined'){
+						_this.checkedMedicines.is_taken = true;
+						_this.dialog = true;
+					}
+				});
 				this.reason = "";
 			},
-			takeMedicine : function(i,medicinename,status){
-				this.data = []
-				this.data['index'] = i;
-				this.data['medicinename'] = medicinename;
-				this.data['status'] = status;
-				if(status == true){
-					this.todaysMedicine[0].medicine[i].selected = true;
-					this.checkedMedicines[i] = "Y";
-					this.newMedicineVal('update', medicinename);
+			takeMedicine : function(i,is_taken){
+				this.checkedMedicines = this.todaysMedicine[i];
+				if(is_taken == true){
+					this.todaysMedicine[i].is_taken = true;
+					this.todaysMedicine[i].status = "Done";
+					this.checkedMedicines = this.todaysMedicine[i];
+					this.newMedicineVal();
 				}else{
 					this.dialog = false;
 					this.reasonDialog = true;
 				}
 			},
-			fetchMedicineReason : function(){
-				let _this = this;
-				axios.create({
-					baseURL : this.apiUrl,
-					headers : {
-						'Authorization' : `Bearer ${this.token}`
-					}
-				})
-				.get('/medicine/logs/reason?patientid='+this.patient.id)
-				.then(function(res){
-					let reason = res.data.data;
-					for(let x in _this.todaysMedicine[0].medicine){
-						if(reason[x]){
-							_this.todaysMedicine[0].medicine[reason[x].medicine_index].selected = true;
-						}
-					}
-				});
-			}
 		}
 	};
 </script>

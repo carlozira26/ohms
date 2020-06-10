@@ -1,13 +1,13 @@
 <template>
 	<div>
-		<v-dialog v-model="medicineListModal" content-class="test" scrollable>
+		<v-dialog v-model="medicineListModal" content-class="medicineListModal" scrollable>
 			<v-card>
 				<v-card-title class="green darken-4">
 					<h1 class="white--text">Medicine List</h1>
 					<v-spacer></v-spacer>
 					<v-tooltip bottom>
 						<template v-slot:activator="{ on }">
-							<v-btn fab small v-on="on" @click="addEditMedicine('new')"><v-icon color="green darken-4">fa fa-plus</v-icon></v-btn>
+							<v-btn icon small dark v-on="on" @click="addEditMedicine('new')"><v-icon>fa fa-plus</v-icon></v-btn>
 						</template>
 					<span>Add New Medicine</span>
 					</v-tooltip>
@@ -22,7 +22,6 @@
 								<thead>
 									<tr class="grey lighten-4" style="border-bottom:1px solid #333">
 										<th class="font-weight-bold text-xs-center" style="width:20%;">MEDICINE NAME</th>
-										<!-- <th class="font-weight-bold text-xs-center" style="width:20%;">INSTRUCTIONS</th> -->
 										<th class="font-weight-bold text-xs-center" style="width:10%;">STATUS</th>
 										<th class="font-weight-bold text-xs-center" style="width:20%;">ACTIONS</th>
 									</tr>
@@ -36,18 +35,17 @@
 									<template v-else>
 										<tr v-for="(medicine,index) in medicineList" v-bind:key="index">
 											<td>{{ medicine.brandname + " (" + medicine.genericname + ")"}}</td>
-											<!-- <td>{{ medicine.instructions }}</td> -->
 											<td>{{ medicine.is_active }}</td>
 											<td>
 												<v-tooltip bottom>
 													<template v-slot:activator="{ on }">
-														<v-btn v-on="on" fab dark small color="green darken-4" @click="addEditMedicine('edit',index)"><v-icon dark>fa fa-pen</v-icon></v-btn>
+														<v-btn v-on="on" icon dark color="green darken-4" @click="addEditMedicine('edit',index)"><v-icon small>fa fa-pen</v-icon></v-btn>
 													</template>
 												<span>Edit Medicine</span>
 												</v-tooltip>
 												<v-tooltip bottom>
 													<template v-slot:activator="{ on }">
-														<v-btn v-on="on" fab dark small color="red darken-4" @click="deleteModal(index)"><v-icon dark>fa fa-trash</v-icon></v-btn>
+														<v-btn v-on="on" icon dark color="red darken-4" @click="deleteModal(index)"><v-icon small>fa fa-trash</v-icon></v-btn>
 													</template>
 												<span>Delete Medicine</span>
 												</v-tooltip>
@@ -62,7 +60,7 @@
 				</v-card-text>
 			</v-card>
 		</v-dialog>
-		<v-dialog v-model="addMedicine" content-class="test" ref="addMedicineDialogBox">
+		<v-dialog v-model="addMedicine" content-class="addNewMedicineModal" ref="addMedicineDialogBox" scrollable>
 			<v-form ref="vForm" v-on:submit.prevent="addEditMedicineSubmit">
 			<v-card>
 				<v-card-title class="green darken-4">
@@ -71,115 +69,38 @@
 				<v-card-text>
 					<v-layout wrap>
 						<v-flex md6 sm12 class="pa-1">
-							<v-text-field label="Brand Name" v-model="brandName" :rules="[formRules.required]"></v-text-field>  
+							<v-text-field label="Brand Name" v-model="medicine.brandName" :rules="[formRules.required]"></v-text-field>  
 						</v-flex>
 						<v-flex md6 sm12 class="pa-1">
-							<v-text-field label="Generic Name" v-model="genericName" :rules="[formRules.required]"></v-text-field>  
+							<v-text-field label="Generic Name" v-model="medicine.genericName" :rules="[formRules.required]"></v-text-field>  
 						</v-flex>
-						<!-- <v-flex md6 sm12 class="pa-1">
-							<v-text-field label="Instructions" v-model="instructions" :rules="[formRules.required]"></v-text-field>
-						</v-flex> -->
+						<v-flex md6 sm12 class="pa-1">
+							<v-text-field label="Manufacturer" v-model="medicine.manufacturer" :rules="[formRules.required]"></v-text-field>  
+						</v-flex>
+						<v-flex md6 sm12 class="pa-1">
+							<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
+								<template v-slot:activator="{ on }">
+									<v-text-field label="Expiration Date" readonly v-on="on" type="text" :value="formatDate(medicine.expiration)" :rules="[formRules.required]"/>
+								</template>
+								<v-date-picker color="green darken-4" ref="picker" @input="menu = false" no-title v-model="medicine.expiration"></v-date-picker>
+							</v-menu>
+						</v-flex>
 					</v-layout>
+					<v-layout row wrap>
+						<v-flex md12 sm12 class="pa-1">
+							<v-textarea no-resize label="Description" v-model="medicine.description" :rules="[formRules.required]"></v-textarea>  
+						</v-flex>
+					</v-layout>
+
 				</v-card-text>
 				<v-divider></v-divider>
-				<v-card-title>
-					<h1 class="green--text">Medicine Time Intake</h1>
-					<v-spacer></v-spacer>
-					<v-tooltip bottom>
-						<template v-slot:activator="{ on }">
-							<v-btn fab small v-on="on" @click="newDayTime" class="green darken-4"><v-icon color="white">fa fa-plus</v-icon></v-btn>
-						</template>
-					<span>Add Day/Time</span>
-					</v-tooltip>
-				</v-card-title>
-				<v-card-text>
-					<v-layout row wrap v-for="(count,index) in models.timeIntake" :key="index">
-						<v-flex md6 xs6 class="pa-1">
-							<v-select :items="dayList" v-model="count.dayList" label="Days of the Week" multiple>
-								<template v-slot:selection="{ item, index }">
-									<v-chip small v-if="index === 0">
-										<span>{{ item }}</span>
-									</v-chip>
-									<template v-if="count.dayList.length <= 2">
-										<span v-if="index === 1" class="grey--text caption">
-											(+{{ count.dayList.length - 1 }} other)
-										</span>
-									</template>
-									<template v-if="count.dayList.length > 2">
-										<span v-if="index === 1" class="grey--text caption">
-											(+{{ count.dayList.length - 1 }} others)
-										</span>
-									</template>
-								</template>
-							</v-select>
-						</v-flex>
-						<v-flex md5 xs4 class="pa-1">
-							<v-dialog lazy v-model="count.modalTime" :close-on-content-click="false" transition="scale-transition" offset-y full-width max-width="350px" min-width="350px">
-								<template v-slot:activator="{ on }">
-									<v-select append-icon="alarm_add" @click:append="count.modalTime= !count.modalTime" label="Times of the day" v-on="on" :items="count.timeList" v-model="count.timeList" multiple>
-										<template v-slot:selection="{ item, index }">
-											<v-chip small v-if="index <= 1" close>
-												<span>{{ item }}</span>
-											</v-chip>
-											<template v-if="count.timeList.length <= 3">
-												<span v-if="index === 2" class="grey--text caption">
-													(+{{ count.timeList.length - 2 }} other)
-												</span>
-											</template>
-											<template v-if="count.timeList.length > 3">
-												<span v-if="index === 3" class="grey--text caption">
-													(+{{ count.timeList.length - 2 }} others)
-												</span>
-											</template>
-										</template>
-									</v-select>
-								</template>
-								<v-card v-model="count.alarmTime">
-									<v-card-text>
-										<v-layout row wrap>
-											<v-flex xs3>
-												<v-btn flat @click="changeTime('hour','up')"><v-icon>keyboard_arrow_up</v-icon></v-btn>
-											</v-flex>
-											<v-flex xs3 offset-xs1>
-												<v-btn flat @click="changeTime('minutes','up')"><v-icon>keyboard_arrow_up</v-icon></v-btn>
-											</v-flex>
-											
-											<v-flex xs4></v-flex>
-											
-											<v-flex xs3>
-												<v-text-field class="centered-input" v-model="hour"></v-text-field>
-											</v-flex>
-											<v-flex xs1 class="pa-2" style="font-size:30px">
-											:
-											</v-flex>
-											<v-flex xs3>
-												<v-text-field class="centered-input" v-model="minutes"></v-text-field>
-											</v-flex>
-
-											<v-flex xs4 class="pa-2">
-												<v-btn class="green darken-4 white--text" @click="addTime(index)">OK</v-btn>
-											</v-flex>
-											
-											<v-flex xs3>
-												<v-btn flat @click="changeTime('hour','down')"><v-icon>keyboard_arrow_down</v-icon></v-btn>
-											</v-flex>
-											<v-flex xs3 offset-xs1>
-												<v-btn flat @click="changeTime('minutes','down')"><v-icon>keyboard_arrow_down</v-icon></v-btn>
-											</v-flex>
-										</v-layout>
-									</v-card-text>
-								</v-card>
-							</v-dialog>
-						</v-flex>
-						<v-flex md1 xs2 v-if="index != 0">
-							<v-btn flat icon outline class="red darken-4" @click="removeRow(index)"><v-icon color="red darken-4">fa fa-minus</v-icon></v-btn>
-						</v-flex>
-					</v-layout>
-				</v-card-text>
 				<v-card-actions>
+						<v-btn flat small icon v-if="medicine.primary" @click="medicine.primary=!medicine.primary"><v-icon small color="green darken-4">check</v-icon></v-btn>
+						<v-btn flat small icon v-else @click="medicine.primary=!medicine.primary"><v-icon small color="red darken-4">close</v-icon></v-btn>
+						Primary Medicine
 					<v-spacer></v-spacer>
-					<v-btn flat large @click="addEditMedicineSubmit(type)">SUBMIT</v-btn>
 					<v-btn flat large @click="addMedicine=false">CANCEL</v-btn>
+					<v-btn flat large @click="addEditMedicineSubmit(type)">SUBMIT</v-btn>
 				</v-card-actions>
 			</v-card>
 			</v-form>
@@ -213,8 +134,7 @@
 
 		data : function(){
 			return {
-				timeCount : [1],
-				count : 1,
+				menu : false,
 				addMedicine : false,
 				medicineListModal : false,
 				dayList : ["Daily","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
@@ -222,10 +142,9 @@
 				search : "",
 				pagination : { page: 1, length : 0 },
 
-				id : "",
-				brandName : "",
-				genericName : "",
-				instructions: "",
+				medicine: {
+					primary : false,
+				},
 				models : {
 					timeIntake : []
 				},
@@ -234,64 +153,10 @@
 				type : "",
 				deleteBox: false,
 				index: "",
-				hour: this.timePad(0,2),
-				minutes : this.timePad(0,2),
 
 			}
 		},
 		methods : {
-			addTime : function(index){
-				this.models.timeIntake[index].alarmTime = this.hour + ":" + this.minutes;
-				if(this.models.timeIntake[index].alarmTime !='' && !this.models.timeIntake[index].timeList.includes(this.models.timeIntake[index].alarmTime)){
-					if(this.models.timeIntake[index].timeList.length < 4){
-						this.models.timeIntake[index].timeList.push(this.models.timeIntake[index].alarmTime);
-						this.models.timeIntake[index].alarmTime = "";
-						this.models.timeIntake[index].modalTime = false;
-					}else{
-						let returnval = { message : "You've reached the maximum limit!", icon : "error", color : "red"};
-						this.eventHub.$emit("showSnackBar", returnval);
-					}
-				}
-			}, 
-			newDayTime : function(){
-				this.models.timeIntake.push({
-					dayList : [],
-					timeList : [],
-					modalTime : false,
-					alarmTime : ""
-				})
-			},
-			addEditMedicineSubmit : function(type){
-				if( this.$refs.vForm.validate() ){
-					let _this = this,
-					formData = new FormData();
-
-					if(type=="edit"){
-						formData.append('id',_this.id);
-					}
-					formData.append("brandName", _this.brandName);
-					formData.append("genericName", _this.genericName);
-					formData.append("instructions", _this.instructions);
-					formData.append("timeIntake",JSON.stringify(_this.models.timeIntake));
-
-					axios.create({
-						baseURL :  _this.apiUrl,
-						headers : {
-							'Authorization' : `Bearer ${this.token}`
-						}
-					})
-					.post('/medicine/addedit/'+type, formData)
-					.then(function(res){
-						_this.addMedicine = false;
-						let returnval = { message : res.data.message, icon : "done", color : "green"};
-						_this.eventHub.$emit("showSnackBar", returnval);
-						_this.getMedicineList();
-					});
-				}else{
-					let returnval = { message : "Please fill up all the required fields", icon : "error", color : "red"};
-					this.eventHub.$emit("showSnackBar", returnval);
-				}
-			},
 			getMedicineList : function(){
 				let _this = this;
 				axios.create({
@@ -303,63 +168,8 @@
 				.get('/medicine/list?page='+_this.pagination.page+'&search='+_this.search)
 				.then(function(res){
 					_this.medicineList = res.data.data;
-					console.log(_this.medicineList);
 					_this.pagination.length = Math.ceil(res.data.count.count / 6);
 				});
-			},
-			getMedicineTimeIntake : function(id){
-				let _this = this;
-				axios.create({
-					baseURL : _this.apiUrl,
-					headers : {
-						'Authorization' : `Bearer ${this.token}`
-					}
-				})
-				.get('/medicine/details/'+id)
-				.then(function(res){
-					var medicineTimeIntake = res.data.data;
-					_this.models.timeIntake = [];
-					for(let timecount=0;timecount< medicineTimeIntake.length;timecount++){
-						let atimeList = medicineTimeIntake[timecount].intaketime.split(",");
-						let adayList = medicineTimeIntake[timecount].intakedays.split(","); 
-						_this.newDayTime();
-						for(let dataTimeCount=0; dataTimeCount<atimeList.length; dataTimeCount++){
-							_this.models.timeIntake[timecount].timeList.push(atimeList[dataTimeCount]);
-						}
-						for(let dataDayCount=0; dataDayCount< adayList.length; dataDayCount++){
-							_this.models.timeIntake[timecount].dayList.push(adayList[dataDayCount]);
-						}
-					}
-				});
-			},
-			addEditMedicine : function(type,id){
-				this.type = type;
-				if(type == 'new'){
-					this.modalTitle = "New Medicine";	
-					this.id = "";
-					this.brandName = "";
-					this.genericName = "";
-					this.instructions = "";
-					this.models.timeIntake = [];
-					this.newDayTime();
-				}else{
-					this.modalTitle = "Edit Medicine";
-					this.getMedicineTimeIntake(this.medicineList[id].id);
-					this.id = this.medicineList[id].id;
-					this.brandName = this.medicineList[id].brandname;
-					this.genericName = this.medicineList[id].genericname;
-					this.instructions = this.medicineList[id].instructions;
-				}
-				this.addMedicine = true;
-			},
-			removeRow : function(index){
-				let newArr = [];
-				for(let i in this.models.timeIntake){
-					if(index != i){
-						newArr.push(this.models.timeIntake[i]);
-					}
-				}
-				this.models.timeIntake = newArr;
 			},
 			deleteModal : function(index){
 				this.deleteBox = true;
@@ -380,43 +190,65 @@
 					_this.getMedicineList();
 				})
 			},
-			changeTime : function(type,arrow){
-				if(type == 'hour'){
-					if(arrow == "up"){
-						this.hour = parseInt(this.hour) + 1;
-						if(this.hour > 23){
-							this.hour = 0;
-						}
-					}else{
-						this.hour = parseInt(this.hour) - 1;
-						if(this.hour < 0){
-							this.hour = 23;
-						}
-					}
+			addEditMedicineSubmit : function(type){
+				if( this.$refs.vForm.validate() ){
+					let _this = this,
+					formData = new FormData();
 
-					this.hour = this.timePad(this.hour, 2);
-				
-				}else{
-					if(arrow == "up"){
-						this.minutes = parseInt(this.minutes) + 15;
-						if(this.minutes>59){
-							this.minutes = 0;
-						}
-					}else{
-						this.minutes = parseInt(this.minutes) - 15;
-						if(this.minutes<0){
-							this.minutes = 45;
-						}
+					if(type=="edit"){
+						formData.append('id',_this.medicine.id);
 					}
-					this.minutes = this.timePad(this.minutes,2);
+					formData.append("brandName", this.medicine.brandName);
+					formData.append("genericName", this.medicine.genericName);
+					formData.append("manufacturer", this.medicine.manufacturer);
+					formData.append("expiration", this.medicine.expiration);
+					formData.append("description", this.medicine.description);
+					formData.append("is_primary", this.medicine.primary);
+					axios.create({
+						baseURL :  _this.apiUrl,
+						headers : {
+							'Authorization' : `Bearer ${this.token}`
+						}
+					})
+					.post('/medicine/addedit/'+type, formData)
+					.then(function(res){
+						_this.addMedicine = false;
+						let returnval = { message : res.data.message, icon : "done", color : "green"};
+						_this.eventHub.$emit("showSnackBar", returnval);
+						_this.getMedicineList();
+					});
+				}else{
+					let returnval = { message : "Please fill up all the required fields", icon : "error", color : "red"};
+					this.eventHub.$emit("showSnackBar", returnval);
 				}
-			}
+			},
+			addEditMedicine : function(type,id){
+				this.type = type;
+				if(type == 'new'){
+					this.modalTitle = "New Medicine";
+					this.$refs.vForm.reset();
+				}else{
+					this.modalTitle = "Edit Medicine";
+					this.medicine.id = this.medicineList[id].id;
+					this.medicine.brandName = this.medicineList[id].brandname;
+					this.medicine.genericName = this.medicineList[id].genericname;
+					this.medicine.manufacturer = this.medicineList[id].manufacturer;
+					this.medicine.expiration = this.medicineList[id].expiration;
+					this.medicine.description = this.medicineList[id].description;
+					this.medicine.primary = (this.medicineList[id].is_primary=="Y") ? true : false;
+				}
+				this.addMedicine = true;
+			},
+			
 		}
 	};
 </script>
 <style>
-	.test {
-		max-width: 60%;
+	.medicineListModal{
+		max-width: 60% ;
+	}
+	.addNewMedicineModal {
+		max-width: 40%;
 	}
 	.warningbox{
 		max-width: 40%;

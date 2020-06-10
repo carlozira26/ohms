@@ -13,7 +13,7 @@ class MedicinesModel extends Model{
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "brandname", "genericname", "cat1", "cat2", "mdr", "is_primary", "is_active"
+    	"id", "brandname", "genericname","manufacturer","expiration", "description", "is_primary", "is_active"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

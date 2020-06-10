@@ -34,16 +34,14 @@
 											<v-text-field label="Last Name" v-model="userData.lastname" type="text" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required]"/>
 										</v-flex>
 										<v-flex xs5 md3 class="pa-1">
-											<template>
-												<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
-													<template v-slot:activator="{ on }">
-														<v-text-field label="Date of Birth" v-model="userData.birthdate" readonly v-on="on" @change="save" type="text" :rules="[formRules.required]"/>
-													</template>
-													<v-date-picker color="green darken-4" ref="picker" v-model="userData.birthdate" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="getAge">
-														<v-btn @click="menu = false" dark block>Close</v-btn>
-													</v-date-picker>
-												</v-menu>
-											</template>
+											<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
+												<template v-slot:activator="{ on }">
+													<v-text-field label="Date of Birth" v-model="userData.birthdate" readonly v-on="on" @change="save" type="text" :rules="[formRules.required]"/>
+												</template>
+												<v-date-picker color="green darken-4" ref="picker" v-model="userData.birthdate" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="getAge">
+													<v-btn @click="menu = false" dark block>Close</v-btn>
+												</v-date-picker>
+											</v-menu>
 										</v-flex>
 										<v-flex xs3 md2 class="pa-1">
 											<v-text-field label="Age" type="text" v-model="age" readonly/>
