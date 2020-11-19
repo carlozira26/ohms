@@ -11,3 +11,4 @@ $app->get('/medicine/patient/list','MedicinesController:getPatientMedicine');
 $app->get('/medicine/patient/schedule','MedicinesController:getSchedule');
 $app->get('/medicine/instructions','MedicinesController:medicineInstructions');
 $app->get('/medicine/logs/reason','MedicinesController:checkReason');
+$app->get('/medicine/healthcare/monitoring','MedicinesController:getChartData');

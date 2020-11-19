@@ -49,10 +49,9 @@ class ChatController{
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
-	private function messageSend($number, $message){
-		echo ($message);
+	public function messageSend($number, $message){
 		$url = 'https://www.itexmo.com/php_api/api.php';
-		$itexmo = array('1' => $number, '2' => substr($message, 0, 100), '3' => 'TR-CHRIS383442_LBFHR');
+		$itexmo = array('1' => $number, '2' => substr($message, 0, 100), '3' => 'TR-ADEIA822556_81Q52', 'passwd' => 'vh@4pigpav');
 		$param = array(
 		    'http' => array(
 		        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",

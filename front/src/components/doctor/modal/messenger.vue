@@ -68,7 +68,7 @@
 			</v-card-text>
 			<section  v-if="pt > 1" style="position:absolute; bottom:0; width:100%">
 				<v-form ref="vForm" v-on:submit.prevent="submitMessage">
-					<v-text-field solo width="100%" counter class="text-message" label="Type text here..." v-model="message" @click:append="submitMessage()" append-icon="fa-location-arrow"></v-text-field>
+					<v-text-field solo width="100%" counter hide-details class="text-message" label="Type text here..." v-model="message" @click:append="submitMessage()" append-icon="fa-location-arrow"></v-text-field>
 				</v-form>
 			</section>
 		</v-card>

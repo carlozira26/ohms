@@ -31,9 +31,7 @@
 						<v-text-field solo prepend-icon="person" label="Username / Email" v-model="username" type="text"></v-text-field>
 						<v-text-field solo prepend-icon="lock" @click:append="showHide = !showHide" v-model="password" :type="showHide ? 'text' : 'password'" :append-icon="showHide ? 'visibility' : 'visibility_off'" label="Password"></v-text-field>
 					</v-card-text>
-
 					<v-divider></v-divider>
-
 					<v-card-actions>
 						<v-spacer></v-spacer>
 						<v-btn flat text type="submit">
@@ -83,7 +81,7 @@
 					.then(function(res){
 						if(res.data.status){
 							VueCookies.set(_this.cookieKey, res.data);
-								_this.$router.push('/');
+							_this.$router.push('/');
 						}else{
 							_this.isInvalildCredential = true;
 						}

@@ -8,6 +8,7 @@ use Models\DiagnosticLogsModel;
 use Models\PatientIntakeModel;
 use Models\BarangayModel;
 use Models\MedicinesModel;
+use Models\BroadcastMessageModel;
 use \Firebase\JWT\JWT;
 
 class PatientsController{
@@ -33,18 +34,48 @@ class PatientsController{
 	}
 	public function patientAppList($req, $res, $args){
 		$data = $req->getQueryParams();
-		$ldate = date('l',strtotime(date('Y-m-d')));
+		$date = (!empty($data['date'])) ? date('Y-m-d',strtotime($data['date'])) : date('Y-m-d');
+		$ldate = date('l',strtotime($date));
 		$search = $data['search'];
-		$patientList = PatientsModel::where('status','Ongoing')
-			->where('medicine_schedule','like','%'.$ldate.'%');
+
+		$patientList = PatientsModel::where('status','Ongoing');
 		if(isset($search) && $search != ""){
-			$patientList = $patientList->where('patient_id',$search);
-			$patientList = $patientList->orWhere('firstname',$search);
-			$patientList = $patientList->orWhere('lastname',$search);
+			$search = addslashes($search);
+			$patientList = $patientList
+				->whereRaw('(patient_id = "'.$search.'" or firstname = "'.$search.'" or lastname = "'.$search.'")');
 		}
+		$patientList = $patientList->where('datestart', '<=', $date);
+		$patientList = $patientList->where('dateend', '>=', $date);
 		$patientList = $patientList->get();
+		$newList = array();
+		foreach($patientList as $patient){
+			if($patient['category'] == "MDR"){
+				$stat = $this->MDR($date,$patient['datestart']);
+				$patient['a'] = $stat;
+			}else if($patient['category'] == "Cat II"){
+				$week = date('l', strtotime($patient['datestart']));
+				if($week == "Monday" || $week == "Tuesday" || $week == "Thursday"){
+					$stat = $this->CatII($date, $patient['datestart'], date('Y-m-d', strtotime($patient['datestart'] ."+34 weeks")), 3);
+				}else if($week == "Wednesday" || $week == "Friday"){
+					$stat = $this->CatII($date, $patient['datestart'], date('Y-m-d', strtotime($patient['datestart'] ."+34 weeks")), 6);
+				}
+					$patient['a'] = $stat;
+			}else if($patient['category'] == "Cat I"){
+				$week = date('l', strtotime($patient['datestart']));
+				if($week == "Friday"){
+					$stat = $this->CatI($date, $patient['datestart'], date('Y-m-d', strtotime($patient['datestart'] . "+26 weeks")), 4);
+				}else{
+					$stat = $this->CatI($date, $patient['datestart'], date('Y-m-d', strtotime($patient['datestart'] . "+26 weeks")), 2);
+				}
+				$patient['a'] = $stat;
+			}
+			// print_r($patient['id']." - ".$patient['category']." - ".$stat."<br>");
+			if($stat == "true"){
+				$newList[] = $patient;
+			}
+		}
 		if($patientList){
-			$this->response['data'] = $patientList;
+			$this->response['data'] = $newList;
 			$this->response['status'] = true;
 		}
 
@@ -70,12 +101,66 @@ class PatientsController{
 
 		return $this->container->response->withJson($this->response);
 	}
-	public function countPatients($req, $res, $args){
-		$d = explode(" ~ ",$_GET['date']);
-		$datefrom = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
-		$dateto = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+	public function MessagePatients($req, $res, $args){
+		$body = $req->getParsedBody();
+		$receivers = explode(" ",$body['receiver']);
+		$message = $body['message'];
 
-		$patients = PatientsModel::select('status')->whereBetween('consultationdate', [$datefrom, $dateto])->get();
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($req, $this->container);
+		$chatController = new ChatController($this->container);
+		
+		$patient = PatientsModel::select('mobilenumber')->where('status',$receivers[0])->get();
+		$savemessage = BroadcastMessageModel::create(array(
+			'receiver' => $body['receiver'],
+			'message' => $message,
+			'sender' => $user['lastname'].", ".$user['firstname']
+		));
+		if($savemessage){
+			$y = 0;
+			foreach($patient as $p){
+				$y++;
+				if($y<4){
+					$contactNumber = str_replace('+63','0',$p['mobilenumber']);
+					$messageSubmit = $chatController->messageSend($contactNumber, $message);
+				}
+			}
+			$this->response['status'] = true;
+		}
+		
+		return $this->container->response->withJson($this->response);
+
+	}
+	public function countPatientForMessage($req, $res, $args){
+		$param = $req->getQueryParams();
+		$status = explode(" ",$param['status']);
+		
+		$patientCount = PatientsModel::selectRaw('count(id) as count')
+			->where('status',$status[0])
+			->first();
+		if($patientCount){
+			$this->response['status'] = true;
+			$this->response['data'] = $patientCount['count'];
+		}
+		return $this->container->response->withJson($this->response);
+	}
+	public function countPatients($req, $res, $args){
+		$param = $req->getQueryParams();
+		$d = explode(" ~ ",$param['date']);
+		$datefrom = (!empty($param['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
+		$dateto = (!empty($param['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+		$status = $param['status'];
+		$category = $param['category'];
+
+		$patients = PatientsModel::select('status')->whereBetween('consultationdate', [$datefrom, $dateto]);
+		if($status != 'All'){
+			$patients = $patients->where('status',$status);
+		}
+		if($category != 'All'){
+			$patients = $patients->where('category',$category);
+		}
+
+		$patients = $patients->get();
 		$arrstatus = array(0,0,0,0);
 
 		foreach($patients as $patient){
@@ -100,6 +185,9 @@ class PatientsController{
 
 	public function addEditPatient($request, $response, $args){
 		$body = $request->getParsedBody();
+
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($request, $this->container);
 		
 		$generateChars = $this->container['generateRandomChars'];
 		$token = $generateChars(22);
@@ -114,24 +202,40 @@ class PatientsController{
 				$this->response['message'] = "Username already used!";
 				$this->response['status'] = "false";
 			}else{
+				$lastID = PatientsModel::select('patient_id')->latest()->first();
+				if($lastID){
+					$patientid = substr($lastID['patient_id'],2) + 1;
+					$patientid = date("y").str_pad($patientid,4,"0",STR_PAD_LEFT);
+				}else{
+					$patientid = date("y").str_pad("1",4,"0",STR_PAD_LEFT);
+				}
 				$patientCreate = PatientsModel::create(array(
-					"patient_id" => $body['patientid'],
+					"patient_id" => $patientid,
 					"firstname" => ucwords(strtolower($body['firstname'])),
 					"middlename" => ucwords(strtolower($body['middlename'])),
-					"lastname" => ucwords(strtolower($body['lastname'])),
+					"lastname" => (isset($body['lastname'])) ? ucwords(strtolower($body['lastname'])) : '',
 					"dateofbirth" => $body['dateofbirth'],
+					"doctor_id" => $body['doctorid'],
 					"consultationdate" => $body['consultationdate'],
 					"gender" => $body['gender'],
 					"mobilenumber" => $body['mobilenumber'],
 					"drtb" => $body['drtb'],
+					"category" => $body['category'],
 					"address" => ucwords(strtolower($body['address'])),
 					"street" => ucwords(strtolower($body['street'])),
 					"barangay" => ucwords(strtolower($body['barangay'])),
 					"city" => ucwords(strtolower($body['city'])),
-					"remarks" => (!empty($body['remarks']) && $body['remarks'] != 'undefined') ? $body['remarks'] : NULL,
+					"remarks" => (!empty($body['remarks']) || $body['remarks'] != 'undefined' ||  $body['remarks'] != 'null') ? $body['remarks'] : "",
 					"username" => $body['username'],
 					"password" => $password,
 					"token" => $token));
+				$id = $patientCreate->id;
+				$patientLogs = PatientLogsModel::create(array(
+					"uid" => $id,
+					"status" => "New",
+					"updated_by" => $user['lastname'].", ".$user['firstname']
+				));
+				$this->response['data'] = $patientid;
 				$this->response['status'] = true;
 				$this->response['message'] = "Successfully Created";
 			}
@@ -156,7 +260,7 @@ class PatientsController{
 					"street" => $body['street'],
 					"barangay" => $body['barangay'],
 					"city" => $body['city'],
-					"remarks" => $body['remarks'],
+					"remarks" => (!empty($body['remarks']) || $body['remarks'] != 'undefined' ||  $body['remarks'] != 'null') ? $body['remarks'] : "",
 					"username" => $body['username'],
 					"password" => $password
 				));
@@ -175,7 +279,7 @@ class PatientsController{
 		$status = $_GET['status'];
 		$limit = 20;
 		$offset = ($_GET['page'] - 1) * $limit;
-		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","street","barangay","city","remarks");
+		$patientList = PatientsModel::select("id","patient_id","firstname","middlename","lastname","username","dateofbirth","consultationdate","doctor_id","gender","mobilenumber","status","drtb","category","address","street","barangay","city","remarks","datestart","dateend");
 
 		$patientCount = PatientsModel::selectRaw("count(id) as count");
 		if(!empty($status)){
@@ -231,7 +335,11 @@ class PatientsController{
 	}
 	public function getLastID($req, $res, $args){
 		$lastID = PatientsModel::select('patient_id')->latest()->first();
-		return $this->container->response->withJson($lastID);
+		if($lastID){
+			$this->response['data'] = $lastID;
+			$this->response['status'] = true;
+		}
+		return $this->container->response->withJson($this->response);
 	}
 	public function DoctorAssign($req, $res, $args){
 		$body = $req->getParsedBody();
@@ -250,22 +358,65 @@ class PatientsController{
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
 	}
+	public function countIntake($req, $res, $args){
+		$param = $req->getQueryParams();
+		$id = $param['id'];
+		$category = $param['category'];
+		$intake = PatientIntakeModel::selectRaw('count(id) as count')->where('patient_id',$id)->first();
+		switch ($category) {
+			case "Cat I" : 
+				$stat = ($intake['count']>='52') ? true : false;
+			break;
+			case "Cat II" :
+				$stat = ($intake['count']>='102') ? true : false;
+			break;
+			case "MDR" :
+				$stat = ($intake['count']>='360') ? true : false;
+			break;
+			default :
+				$stat = false;
+		}
+		$this->response['status'] = $stat;
+		$this->response['intake'] = $category;
+		return $this->container->response->withJson($this->response);
+	}
 	public function changePatientStatus($req, $res, $args){
 		$Utils = new Utils();
 		$user = $Utils->getUserFromBearerToken($req, $this->container);
 		
 		$body = $req->getParsedBody();
 		$id = $args['id'];
+		$reason = (isset($body['reason'])) ? $body['reason'] : "";
 
-		$reason = (isset($body['reason'])) ? $body['reason'] : ""; 
+		$patient = PatientsModel::select("patient_id")->where('id',$id)->first();
+		$file = null;
+		if(isset($_FILES['imageFile'])){
+			$file = $_FILES['imageFile'];
+			$imgUploadResponse = $this->uploadImage($file, "Other" ,$patient['patient_id']);
+		}
+
+		$imgpath = null;
+		if(isset($imgUploadResponse['imageLocation'])){
+			$imgpath = $imgUploadResponse['imageLocation'];
+			$dag = new DiagnosticLogsModel;
+			$dag->patient_id = $id;
+			$dag->diagnostic_type = 'Other';
+			$dag->examination_date = date('Y-m-d');
+			$dag->remarks = $reason;
+			$dag->image_location = $imgpath;
+			$dag->save();
+		}
 		PatientsModel::where('id',$id)->update(array('status' => $body['status']));
-		PatientMedicinesModel::where('uid',$id)->update(array('is_active' => 'N'));
 		PatientLogsModel::create(array(
 			'uid' => $id,
 			'status' => $body['status'],
 			'reason' => $reason,
 			'updated_by' => $user['lastname'].", ".$user['firstname']
 		));
+		if($body['status']=='New'){
+			PatientMedicinesModel::where('uid',$id)->update(array('is_active' => 'N'));
+			PatientIntakeModel::where('patient_id',$id)->update(array('is_active' => 'N'));
+		}
 		$this->response['message'] = "Successfully Changed!";
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
@@ -274,12 +425,16 @@ class PatientsController{
 		$data = $req->getQueryParams();
 		$limit = 8;
 		$offset = ($data['page'] - 1) * $limit;
-		$patientDiagnostic = DiagnosticLogsModel::where( 'patient_id', $data['id'] )
+		$patientDiagnostic = DiagnosticLogsModel::where('patient_id', $data['id'])
+			->where('is_active','Y')
 			->orderBy('created_at', 'desc')
 			->offset($offset)
-			->limit($limit)
-			->get();
-		$diagnosticCount = DiagnosticLogsModel::selectRaw("count(id) as count")->where( 'patient_id',$data['id'] )->first();
+			->limit($limit);
+		$diagnosticCount = DiagnosticLogsModel::selectRaw("count(id) as count")
+			->where('patient_id',$data['id'])
+			->where('is_active','Y')
+			->first();
+		$patientDiagnostic = $patientDiagnostic->get();
 		$this->response['count'] = $diagnosticCount;
 		$this->response['data'] = $patientDiagnostic;
 		$this->response['status'] = true;
@@ -338,7 +493,9 @@ class PatientsController{
 	}
 	public function checkLaboratory($req, $res, $args){
 		$id = $args['id'];
-		$res = DiagnosticLogsModel::where('patient_id',$id)->first();
+		$res = DiagnosticLogsModel::where('patient_id',$id)
+			->where('is_active','Y')
+			->first();
 		
 		if($res){
 			$this->response['status'] = true;
@@ -369,7 +526,10 @@ class PatientsController{
 			);
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
-		$patientFile = DiagnosticLogsModel::select('diagnostic_type','image_location','remarks')->where('patient_id',$user['id'])->get();
+		$patientFile = DiagnosticLogsModel::select('diagnostic_type','image_location','remarks')
+			->where('patient_id',$user['id'])
+			->where('is_active','Y')
+			->get();
 		$count = 0;
 		foreach($examType as $type){
 			foreach($patientFile as $file){
@@ -392,31 +552,6 @@ class PatientsController{
 		return $this->container->response->withJson($examList);
 	}
 
-	public function fetchInfected($req, $res, $args){
-		$body = $req->getQueryParams();
-		$dates = (!empty($body['date'])) ? explode(" ~ ",$body['date']) : array(date('Y-01-01'), date('Y-12-31'));
-		$datefrom = date('Y-m-d', strtotime($dates[0]));
-		$dateto = date('Y-m-d', strtotime($dates[1]));
-		
-		$patients = PatientsModel::whereBetween('consultationdate',[$datefrom,$dateto])->get();
-		$agelist = array(0,0,0,0,0);
-		
-		foreach($patients as $patient){
-			if($this->getAge($patient['dateofbirth']) <= 17){
-				$agelist[0] += 1;
-			}else if ($this->getAge($patient['dateofbirth']) > 17 && $this->getAge($patient['dateofbirth']) <= 25){
-				$agelist[1] += 1;
-			}else if ($this->getAge($patient['dateofbirth']) > 25 && $this->getAge($patient['dateofbirth']) <=35){
-				$agelist[2] += 1;
-			}else if ($this->getAge($patient['dateofbirth']) > 35 && $this->getAge($patient['dateofbirth']) <= 40){
-				$agelist[3] += 1;
-			}else{
-				$agelist[4] += 1;
-			}
-		}
-		return $this->container->response->withJson($agelist);
-	}
-
 	private function getAge($birthdate){
 		$today = date_create(date('Y-m-d'));
 		$bdate = date_create($birthdate);
@@ -425,12 +560,19 @@ class PatientsController{
 	}
 
 	public function fetchIntakeLogs($req, $res, $args){
-		$id = $_GET['id'];
-		$log = PatientIntakeModel::selectRaw('status,date,created_at,concat(brandname,":",genericname) as medicine,reason')
-			->join('medicines','medicines.id','=','patient_intake.medicineid')
-			->where('patient_id',$id)
-			->orderBy('created_at','desc')
-			->get();
+		$params = $req->getQueryParams();
+		$id = $params['id'];
+		$d = explode(" ~ ",$params['date']); 
+		$datefrom = ($params['date'] == '') ? date('Y-m-d', strtotime($d[0])) : '';
+		$dateto = ($params['date'] != '') ? date('Y-m-d', strtotime($d[1])) : '';
+		
+		$log = PatientIntakeModel::selectRaw('status,date,created_at,reason,distributor')
+			->where('patient_id',$id);
+
+		if(!empty($datefrom) && !empty($dateto)){
+			$log = $log->whereRaw('`date` between "'.$datefrom.'" and "'.$dateto.'"');
+		}
+		$log = $log->orderBy('created_at','desc')->get();
 
 		if(count($log) > 0){
 			$this->response['data'] = $log;
@@ -440,102 +582,75 @@ class PatientsController{
 	}
 
 	public function fetchOutcomes($req, $res, $args){
-		$d = explode(" ~ ",$_GET['date']); 
-		$today = ($_GET['date'] == '') ? date('Y-m-d') : date('Y-m-d', strtotime($d[1]));
-		$datefrom = ($_GET['date'] == '') ? date('Y-m-d', strtotime($today . "-11 months")) : date('Y-m-d', strtotime($d[0]));
-		
+		$param = $req->getQueryParams();
+		$d = explode(" ~ ",$param['date']); 
+		$today = ($param['date'] == '') ? date('Y-m-d') : date('Y-m-d', strtotime($d[1]));
+		$datefrom = ($param['date'] == '') ? date('Y-m-d', strtotime($today . "-11 months")) : date('Y-m-d', strtotime($d[0]));
+		$status = $param['status'];
+		$category = $param['category'];
+
 		$d1 = date_create($today);
 		$d2 = date_create($datefrom);
 		$ddiff = date_diff($d1,$d2); 
 
 		$patientlist = array();
 		$monthlist = array();
-		for($x=0; $x < $ddiff->format('%m') +1 ; $x++){
-			array_unshift($monthlist,date('M',strtotime($today." -".$x." month")));
+		$exp = explode('-',$today);
+		for($x=0; $x <= $ddiff->format('%m'); $x++){
+			$aaa = date('M',strtotime($exp[0]."-".$exp[1]." -$x months"));
+			$d1->modify("-1 month");
+			if(!in_array($d1->format('M'), $monthlist)){
+				array_unshift($monthlist, $aaa);	
+			}
+			if(date('M',strtotime($datefrom)) == date('M',strtotime($today))){
+				break;
+			}
 		}
 		$arraylist = array();
 		for($x=0; $x<count($monthlist);$x++){
 			array_push($arraylist,0);
 		}
-		$arrstat = array(
-			'New' => $arraylist,
-			'Ongoing' => $arraylist,
-			'Success' => $arraylist,
-			'Discontinuation' => $arraylist
-		);
-
-		$patientlistqry = PatientLogsModel::selectRaw("uid,status,cast(created_at as date) as date")
-			->whereRaw('cast(created_at as date) between "'.$datefrom.'" and "'.$today.'"')
-			->orderBy('created_at');
-		$patientlistqryget = $patientlistqry->get();
-		$patientlistqrysql = $patientlistqry->toSql();
-
-		$this->response['sql'] = $patientlistqrysql;
-		foreach($patientlistqryget as $patients){
-			$patientlist[$patients['uid']]['status'][] = $patients['status'];
-			$patientlist[$patients['uid']]['dates'][] = $patients['date'];
+		$patientlistqry = PatientsModel::select('patient_id','firstname','middlename','lastname','consultationdate','status','category')
+			->whereRaw('consultationdate between "'.$datefrom.'" and "'.$today.'"');
+		if($status!='All'){
+			$patientlistqry = $patientlistqry->where('status', $status);
+		}
+		if($category!='All'){
+			$patientlistqry = $patientlistqry->where('category',$category);
+		}
+		$patientlist = $patientlistqry->orderBy('firstname','asc')->get();
+		$arrstat = array();
+		foreach($monthlist as $month){
+			$arrstat[$month] = 0;		
+		}
+		foreach($patientlist as $patient){
+			$mo = date('M',strtotime($patient['consultationdate']));
+			$arrstat[$mo] += 1;
 		}
 
-		foreach($patientlist as $key=>$patient){
-			if(in_array('Discontinuation',$patient['status'])){
-				$date = $patient['dates'][array_search('Discontinuation',$patient['status'])];
-				$mo = array_search( date('M', strtotime($date)),$monthlist);
-				
-				$arrstat['Discontinuation'][$mo] = $arrstat['Discontinuation'][$mo] + 1;
-			}if(in_array('Success',$patient['status'])){
-				$date = $patient['dates'][array_search('Success',$patient['status'])];
-				$mo = array_search( date('M', strtotime($date)),$monthlist);
-				
-				$arrstat['Success'][$mo] = $arrstat['Success'][$mo] + 1;
-			}if(in_array('Ongoing',$patient['status'])){
-				$checks = in_array('Success',$patient['status']);
-				$checkd = in_array('Discontinuation',$patient['status']);
-				if($checks){
-					$successm = date('n', strtotime($patient['dates'][array_search('Success',$patient['status'])]));
-					$successmo = date_create($patient['dates'][array_search('Success',$patient['status'])]);
-					$ongoingmo = date_create($patient['dates'][array_search('Ongoing',$patient['status'])]);
-					$diff = date_diff($successmo,$ongoingmo)->format('%m');
-					for($x=$successm-1; $x > ($successm - $diff) ; $x--){
-						$oldMonth =  date('Y-m-d', strtotime($patient['dates'][array_search('Success',$patient['status'])] . "-$x month"));
-						$mo = array_search( date('M', strtotime($oldMonth)), $monthlist);
-					}
-				}
-				if($checkd){
-					$discontm = date('n', strtotime($patient['dates'][array_search('Discontinuation',$patient['status'])]));
-					$discontmo = date_create($patient['dates'][array_search('Discontinuation',$patient['status'])]);
-					$ongoingmo = date_create($patient['dates'][array_search('Ongoing',$patient['status'])]);
-					$diff = date_diff($successmo,$ongoingmo)->format('%m');
-						
-					for($x=$successm-1; $x > ($successm - $diff) ; $x--){
-						$oldMonth =  date('Y-m-d', strtotime($patient['dates'][array_search('Discontinuation',$patient['status'])] . "-$x month"));
-						$mo = array_search( date('M', strtotime($oldMonth)), $monthlist);
-						$arr['Ongoing'][$mo] = $arr['Ongoing'][$mo] + 1;
-					}
-				}
-				$date = $patient['dates'][array_search('Ongoing',$patient['status'])];
-				$mo = array_search( date('M', strtotime($date)),$monthlist);
-				
-				$arrstat['Ongoing'][$mo] = $arrstat['Ongoing'][$mo] + 1;
-			}if(in_array('New',$patient['status'])){
-				$date = $patient['dates'][array_search('New',$patient['status'])];
-				$mo = array_search( date('M', strtotime($date)),$monthlist);
-				$arrstat['New'][$mo] = $arrstat['New'][$mo] + 1;		
-			}
-		}
 		$this->response['data'] = $arrstat;
 		$this->response['months'] = $monthlist;
 
 		return $this->container->response->withJson($this->response);
 	}
 	public function fetchPatientList($req, $res, $args){
-		$d = explode(" ~ ",$_GET['date']);
-		$datefrom = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
-		$dateto = (!empty($_GET['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+		$params = $req->getQueryParams();
+		$d = explode(" ~ ",$params['date']);
+		$datefrom = (!empty($params['date'])) ? date("Y-m-d", strtotime($d[0])) : date("Y-m-d", strtotime(date('Y-m-d') . "-1 year"));
+		$dateto = (!empty($params['date'])) ? date("Y-m-d", strtotime($d[1])) : date("Y-m-d");
+		$category = $params['category'];
+		$status = $params['status'];
+		$patients = PatientsModel::select('patient_id','firstname','middlename','lastname','consultationdate','status','category')
+			->whereRaw('consultationdate between "'.$datefrom.'" and "'.$dateto.'"');
 
-		$patients = PatientsModel::select('patient_id','firstname','middlename','lastname','patient_logs.created_at','patient_logs.status')
-			->join('patient_logs','patient_logs.uid','patients.id')
-			->whereRaw('cast(patient_logs.created_at as date) between "'.$datefrom.'" and "'.$dateto.'"')
-			->orderBy('created_at','desc')->get();
+		if($category!='All'){
+			$patients = $patients->where('patients.category',$category);
+		}
+		if($status!='All'){
+			$patients = $patients->where('patients.status',$status);
+		}
+			
+		$patients = $patients->orderBy('firstname','desc')->get();
 		$this->response['data'] = $patients;
 		return $this->container->response->withJson($this->response);
 	}
@@ -551,31 +666,146 @@ class PatientsController{
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
 		$id = (isset($body['id'])) ? $body['id'] : $user['id'];
 
-		$date = (isset($body['date']))? $body['date'] : date('Y-m-d');
+		$date = (isset($body['date']))? date('Y-m-d',strtotime($body['date'])) : date('Y-m-d');
 		$medicine = MedicinesModel::select('medicines.id','brandname','genericname')
 			->join('patient_medicine','medicines.id','=','patient_medicine.medicineid')
 			->where('uid',$id)
-			->where('patient_medicine.is_active','Y')
-			->get();
-
-		$intakelogs = PatientIntakeModel::select('medicineid','status','reason')
+			->where('patient_medicine.is_active','Y');
+		$medicine = $medicine->get();
+		$intakelogs = PatientIntakeModel::select('date', 'status', 'reason', 'distributor')
 			->where('patient_id',$id)
 			->where('date', $date)
-			->get();
+			->orderBy('id','desc')
+			->first();
 
-		foreach($medicine as $meds){
-			$is_taken = false;
-			foreach($intakelogs as $logs){
-				if($logs['medicineid'] == $meds['id']){
-					$is_taken = true;
-					$meds['status'] = $logs['status'];
-				}
-			}
-			$meds['is_taken'] = $is_taken;
-		}
-		$this->response['data'] = $medicine;
+		$medicineinfo['list'] = $medicine;
+		$medicineinfo['status'] = ($intakelogs['status']!=null) ? $intakelogs['status'] : 'None';
+		$this->response['data'] = $medicineinfo;
 		$this->response['status'] = true;
 		
 		return $this->container->response->withJson($this->response);
+	}
+
+	public function checkPatient($req, $res, $args){
+		$data = $req->getQueryParams();
+		$stat = PatientsModel::select('status')->where('id', $data['id'])->first();
+		$diagnostic = DiagnosticLogsModel::select('id')
+			->where('patient_id', $data['id'])
+			->where('is_active','Y')
+			->first();
+		$this->response['data']["prerequisite"] = "diagnostic";
+		$this->response['patient'] = $stat['status'];
+		if($diagnostic){
+			$patientMedicine = PatientMedicinesModel::select('id')
+			->where('uid', $data['id'])
+			->where('is_active','Y')
+			->first();
+			$this->response['data']["prerequisite"] = "medicine";
+			if($patientMedicine){
+				$this->response['data'] = "";
+				$this->response['status'] = true;
+			}
+		}
+		return $this->container->response->withJson($this->response);
+	}
+	public function logStatus($req, $res, $args){
+		$body = $req->getQueryParams();
+		$logs = PatientLogsModel::select('status','reason','updated_by','created_at')
+				->where('uid',$body['id'])
+				->orderBy('id','desc')
+				->first();
+			if($logs){
+				$this->response['data'] = $logs;
+				$this->response['status'] = true;
+			}
+		return $this->container->response->withJson($this->response);
+	}
+	private function MDR($datetoday, $datestart){
+		$nxtYear = date("Y-m-d",strtotime($datestart.'+1 year'));
+		$str = strtotime($nxtYear) - strtotime($datestart);
+		$diff = floor($str/3600/24);
+		$status = "false";
+		for($x = 0; $x < $diff; $x++){
+			$day = date('Y-m-d', strtotime($datestart . "+$x days"));
+			if($datetoday == $day){
+				$status = "true";
+				break;
+			}
+		}
+		return $status;
+	}
+
+	private function CatII($datetoday, $dateFromString, $dateToString, $loop){
+		$y = 0;
+		$datetoday = '2020-07-17';
+		$status = "false";
+		for($x=0;$x<$loop;$x++){
+			$day = date('Y-m-d',strtotime($dateFromString." +$y days"));
+			if($day == $datetoday){
+				$status = "true";
+				break;
+			}
+			$date = date('Y-m-d',strtotime($dateFromString." +$y days"));
+			$y = $y+2;
+		}
+		$y = 0;
+		if($status == "false"){
+			if ("Monday" != date('l',strtotime($date))) {
+				$date = date('Y-m-d',strtotime($date . "next monday"));
+			}
+			for($x=0;$x<3;$x++){
+				$incrementdate = date('Y-m-d',strtotime($date." +$y days"));
+				$dateFrom = new \DateTime(date('Y-m-d',strtotime($incrementdate)));
+				$dateTo = new \DateTime($dateToString);
+				
+				while ($dateFrom <= $dateTo) {
+					if($incrementdate == $datetoday){
+						$status = "true";
+						break;
+					}
+					$dateFrom->modify('+1 week');
+				}
+				$y = $y+2;
+			}
+		}
+		return $status;
+	}
+	
+	private function CatI($datetoday, $dateFromString, $dateToString,$loop){
+		$y = 0;
+		$datetoday = '2020-07-17';
+		$month = date('m',strtotime($dateFromString));
+		$status = "false";
+		$date = "";
+		for($x=0;$x<$loop;$x++){
+			$day = date('Y-m-d',strtotime($dateFromString." +$y days"));
+			if($day == $datetoday){
+				$status = "true";
+				break;
+			}
+			$date = date('Y-m-d',strtotime($dateFromString." +$y days"));
+			$y = $y+2;
+		}
+		$y = 0;
+		if($status == "false"){
+			if ("Monday" != date('l',strtotime($date))) {
+				$date = date('Y-m-d',strtotime($date . "next monday"));
+			}
+			for($x=0;$x<2;$x++){
+				$incrementdate = date('Y-m-d',strtotime($date." +$y days"));
+				$dateFrom = new \DateTime(date('Y-m-d',strtotime($incrementdate)));
+				$dateTo = new \DateTime($dateToString);
+				
+				while ($dateFrom <= $dateTo) {
+					if($incrementdate == $datetoday){
+						$status = "true";
+						break;
+					}
+					$dateFrom->modify('+1 week');
+				}
+				$y = $y+2;
+			}
+		}
+		return $status;
 	}
 }

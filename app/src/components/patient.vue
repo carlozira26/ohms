@@ -8,7 +8,7 @@
 					<v-btn small flat icon class="white--text" @click="dialog=false"><v-icon>close</v-icon></v-btn>
 				</v-card-title>
 				<v-card-text>
-					<v-layout row wrap>
+					<v-layout row wrap class="mb-2">
 						<v-flex xs4 class="font-weight-bold text-xs-right">
 							Patient ID :
 						</v-flex>
@@ -28,42 +28,59 @@
 							{{ patient.category }}
 						</v-flex>
 					</v-layout>
+					<template class="text-xs-center" v-if="todaysMedicine.length==0">
+						<v-card>
+							<v-card-title class="font-weight-bold grey darken-1 white--text">
+								Medicine Name
+							</v-card-title>
+						</v-card>
+						<v-card max-height="233" style="overflow-y:auto" scrollable>
+							<v-card-text>
+								<v-list dense>
+									<v-list-tile>
+										<v-list-tile-content>
+											No Scheduled Medicine
+										</v-list-tile-content>
+									</v-list-tile>
+								</v-list>
+							</v-card-text>
+						</v-card>
+					</template>
+					<template v-else>
+						<v-card>
+							<v-card-title class="font-weight-bold grey darken-1 white--text">
+								Medicine List
+							</v-card-title>
+						</v-card>
+						<v-card max-height="233" style="overflow-y:auto" scrollable>
+							<v-card-text>
+								<v-list dense>
+									<template v-for="(medicine, i) in todaysMedicine">
+										<v-list-tile :key="medicine.brandname">
+											<v-list-tile-content dense>
+												{{ medicine.brandname }} : {{ medicine.genericname }}
+											</v-list-tile-content>
+										</v-list-tile>
+										<v-divider :key="i"></v-divider>
+									</template>
+								</v-list>
+							</v-card-text>
+						</v-card>
+					</template>
 				</v-card-text>
-				<v-card-text>
-					<table v-if="todaysMedicine.length==0" class="theme--light fluid" id="tablemedicine">
-						<thead>
-							<tr class="grey lighten-4" style="border-bottom:1px solid #333;">
-								<th class="font-weight-bold text-md-center grey darken-1 white--text">Medicine Name</th>
-								<th class="font-weight-bold text-md-center grey darken-1 white--text">Take Medicine</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td colspan="2">No Data Found</td>
-							</tr>
-						</tbody>
-					</table>
-					<table v-else class="theme--light fluid" id="tablemedicine">
-						<thead>
-							<tr class="grey lighten-4" style="border-bottom:1px solid #333;">
-								<th class="font-weight-bold text-md-center grey darken-1 white--text">Medicine Name</th>
-								<th class="font-weight-bold text-md-center grey darken-1 white--text">Take Medicine</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="(tmedicinelist,i) in todaysMedicine" :key="i">
-								<td>{{ tmedicinelist.brandname }} : {{ tmedicinelist.genericname }}</td>
-								<td v-if="tmedicinelist.is_taken == true">
-									{{ tmedicinelist.status }}
-								</td>
-								<td v-else>
-									<v-btn icon small class="green darken-4" color="white--text" @click="takeMedicine(i,true)"><v-icon>check</v-icon></v-btn>
-									<v-btn icon small class="error darken-4" color="white--text" @click="takeMedicine(i,false)"><v-icon>close</v-icon></v-btn>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</v-card-text>
+				<v-card-actions>
+					<v-spacer></v-spacer>
+					<template v-if="prescribedMedicineStatus=='None'">
+						<v-btn color="error darken-4" flat class="white--text" @click="newMedicineVal(false)"><v-icon left small>fa-times</v-icon>Decline</v-btn>
+						<v-btn color="green darken-4" flat class="white--text" append-icon="check" @click="newMedicineVal(true)"><v-icon left small>fa-check</v-icon> Check</v-btn>
+					</template>
+					<template v-if="prescribedMedicineStatus=='Declined'">
+						<v-btn color="error darken-4" outline class="white--text" @click="dialogApprove=true">Declined</v-btn>
+					</template>
+					<template v-if="prescribedMedicineStatus=='Done'">
+						<v-btn color="green darken-4" outline class="white--text">Done</v-btn>
+					</template>
+				</v-card-actions>
 			</v-card>
 		</v-dialog>
 		<v-dialog v-model="reasonDialog">
@@ -84,7 +101,22 @@
 				<v-card-actions>
 					<v-spacer></v-spacer>
 					<v-btn flat @click="dialog=true;reasonDialog=false">Cancel</v-btn>
-					<v-btn flat @click="newMedicineVal();reasonDialog=false">Submit</v-btn>
+					<v-btn flat @click="reasonSubmit=true;newMedicineVal(false)">Submit</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
+		<v-dialog v-model="dialogApprove">
+			<v-card>
+				<v-card-title primary-title class="green darken-4 white--text">
+					<h2>Medicine Accept</h2>
+				</v-card-title>
+				<v-card-text>
+					Do you want to change the status of this medicine list to <b>"Done"</b>?
+				</v-card-text>
+				<v-card-actions>
+					<v-spacer></v-spacer>
+					<v-btn flat @click="dialogApprove=false">Cancel</v-btn>
+					<v-btn flat @click="newMedicineVal(true)">Confirm</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
@@ -98,6 +130,7 @@ import axios from 'axios';
 			this.eventHub.$on('viewPatient', val => {
 				this.token = VueCookies.get(this.cookieKey).token;
 				this.patient = val.patient;
+				this.date = val.date
 				this.dialog = true;
 				this.fetchPatientMedicine();
 			});
@@ -112,6 +145,9 @@ import axios from 'axios';
 				reason : "",
 				reasonList : [],
 				data : [],
+				dialogApprove : false,
+				date : '',
+				prescribedMedicineStatus : '',
 			}
 		},
 		methods : {
@@ -123,36 +159,58 @@ import axios from 'axios';
 						'Authorization' : `Bearer ${this.token}`
 					},
 				})
-				.get('/patient/app/medicine?id='+this.patient.id)
+				.get('/patient/app/medicine?id='+this.patient.id+"&date="+this.date)
 				.then(function(res){
-					_this.todaysMedicine = res.data.data;
+					_this.todaysMedicine = res.data.data.list;
+					_this.prescribedMedicineStatus = res.data.data.status;
 				});
 			},
-			newMedicineVal : function(){
-				this.checkedMedicines.status = (this.checkedMedicines.is_taken==true) ? 'Done' : 'Declined';
+			newMedicineVal : function(is_taken){
 				let _this = this,
+				submit = false,
 				formData = new FormData();
-				formData.append('patientid',this.patient.id);
-				formData.append('medicineid', this.checkedMedicines.id);
+				formData.append('date',this.date);
 				formData.append('reason',this.reason);
-				formData.append('status', this.checkedMedicines.status);
-				axios.create({
-					baseURL : this.apiUrl,
-					headers : {
-						'Authorization' : `Bearer ${this.token}`
+				formData.append('patientid',this.patient.id);
+				
+				if(is_taken == false){
+					this.dialog = false;
+					this.reasonDialog = true;
+					formData.append('status', "Declined");
+					if(this.reasonSubmit == true){
+						this.reasonDialog=false;
+						submit = true;
 					}
-				})
-				.post('/medicine/newvalue',formData)
-				.then(function(res){
-					_this.snackbarMessage = (_this.checkedMedicines.status=="Done")? "Medicine accepted!" : "Medicine declined!";
-					if(res.data.status){
-						_this.eventHub.$emit('snackBar', _this.snackbarMessage)
-					}
-					if(_this.checkedMedicines.status == 'Declined'){
-						_this.checkedMedicines.is_taken = true;
-						_this.dialog = true;
-					}
-				});
+				}else{
+					formData.append('status', "Done");
+					submit = true;
+				}
+				if(submit==true){
+					axios.create({
+						baseURL : this.apiUrl,
+						headers : {
+							'Authorization' : `Bearer ${this.token}`
+						}
+					})
+					.post('/medicine/newvalue',formData)
+					.then(function(res){
+						let snackbarMessage = (is_taken==true)? "Medicine accepted!" : "Medicine declined!";
+						let returnval = { message : snackbarMessage, icon : "done", color : "green"};
+
+						if(is_taken == false){
+							_this.prescribedMedicineStatus = "Declined";
+							_this.reasonSubmit = false;
+						}else{
+							_this.prescribedMedicineStatus = "Done";
+						}
+
+						if(res.data.status){
+							_this.eventHub.$emit('showSnackBar', returnval)
+						}
+						_this.dialogApprove=false;
+					});
+				}
+
 				this.reason = "";
 			},
 			takeMedicine : function(i,is_taken){

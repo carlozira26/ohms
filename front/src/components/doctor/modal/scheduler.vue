@@ -1,80 +1,85 @@
 <template>
 	<div>
-		<v-dialog v-model="medscheduler" width="60%">
-			<v-card style="overflow:auto">
+		<v-dialog v-model="medscheduler" width="60%" scrollable>
+			<v-card>
 				<v-card-title primary-title class="green darken-4">
 					<h1 class="white--text">Scheduler</h1>
 				</v-card-title>
 				<v-divider></v-divider>
 				<template v-if="patient.status!='New'">
 					<v-card-text>
+						<div class="text-xs-left"><label class="font-weight-bold">Patient ID</label> : # {{ patient.patient_id }} </div>
+						<div class="text-xs-left pb-2"><label class="font-weight-bold">Patient Name</label> : {{patient.firstname + " " + patient.lastname}}</div>
 						<v-layout row wrap>
-							<v-flex xs12 sm12 md7>
+							<v-flex xs12 sm12 md7 class="pa-1">
 								<v-date-picker
 									full-width
 									landscape
 									v-model="date"
 									:events="arrayEvents"
 									color="green darken-4"
-									event-color="green darken-2"
+									:event-color="eventColor"
 									@change="fetchMedicine"
 								></v-date-picker>
 							</v-flex>
-							<v-flex xs12 md5 class="pl-3">
+							<v-flex xs12 md5 class="pa-1">
 								<div class="text-xs-left">
-									<div class="text-xs-center" v-if="prescribedMedicine == 0">
-										<table class="theme--light fluid" id="tablemedicine">
-											<thead>
-												<tr class="grey lighten-4" style="border-bottom:1px solid #333;">
-													<th class="font-weight-bold text-md-center grey darken-1 white--text">Medicine Name</th>
-													<th class="font-weight-bold text-md-center grey darken-1 white--text">Take Medicine</th>
-												</tr>
-											</thead>
-											<tbody>
-												<tr>
-													<td colspan="2" class="red--text">No Scheduled Medicine</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
+									<template class="text-xs-center" v-if="prescribedMedicine == 0">
+										<v-card>
+											<v-card-title class="font-weight-bold grey darken-1 white--text">
+												Medicine Name
+											</v-card-title>
+										</v-card>
+										<v-card max-height="233" style="overflow-y:auto" scrollable>
+											<v-card-text>
+												<v-list dense>
+													<v-list-tile>
+														<v-list-tile-content>
+															No Scheduled Medicine
+														</v-list-tile-content>
+													</v-list-tile>
+												</v-list>
+											</v-card-text>
+										</v-card>
+									</template>
 									<template v-else>
-										<table class="theme--light fluid" id="tablemedicine">
-											<thead>
-												<tr class="grey lighten-4" style="border-bottom:1px solid #333;">
-													<th class="font-weight-bold text-md-center grey darken-1 white--text">Medicine Name</th>
-													<th class="font-weight-bold text-md-center grey darken-1 white--text">Take Medicine</th>
-												</tr>
-											</thead>
-											<tbody>
-												<tr v-for="(medicine, i) in prescribedMedicine" :key="i" class="text-sm-center">
-													<td>{{ medicine.brandname }} : {{ medicine.genericname }}</td>
-													<template v-if="medicine.is_taken == true">
-														<template v-if="medicine.status != 'Declined'">
-															<td class="text-xs-center">
-																{{ medicine.status }}
-															</td>
-														</template>
-														<template v-else>
-															<td class="text-xs-center" @click="dialogApprove=true; checkedMedicines=medicine" style="cursor:pointer">
-																<v-icon small color="red">fa-exclamation-circle</v-icon>
-																{{ medicine.status }}
-															</td>
-														</template>
+										<v-card>
+											<v-card-title class="font-weight-bold grey darken-1 white--text">
+												Medicine Name
+											</v-card-title>
+										</v-card>
+										<v-card max-height="233" style="overflow-y:auto" scrollable>
+											<v-card-text>
+												<v-list dense>
+													<template v-for="(medicine, i) in prescribedMedicine">
+														<v-list-tile :key="medicine.brandname">
+															<v-list-tile-content dense>
+																{{ medicine.brandname }} : {{ medicine.genericname }}
+															</v-list-tile-content>
+														</v-list-tile>
+														<v-divider :key="i"></v-divider>
 													</template>
-													<template v-else> 
-														<td>
-															<v-btn flat icon small color="green darken-4" @click="takeMedicine(i,true)"><v-icon>check</v-icon></v-btn>
-															<v-btn flat icon small color="error darken-4" @click="takeMedicine(i,false)"><v-icon>close</v-icon></v-btn>
-														</td>
-													</template>
-												</tr>
-											</tbody>
-										</table>
+												</v-list>
+											</v-card-text>
+										</v-card>
 									</template>
 								</div>
 							</v-flex>
 						</v-layout>
 					</v-card-text>
+					<v-card-actions>
+						<v-spacer></v-spacer>
+						<template v-if="prescribedMedicineStatus=='None'">
+							<v-btn color="error darken-4" flat class="white--text" @click="newMedicineVal(false)"><v-icon left small>fa-times</v-icon>Decline</v-btn>
+							<v-btn color="green darken-4" flat class="white--text" append-icon="check" @click="newMedicineVal(true)"><v-icon left small>fa-check</v-icon> Check</v-btn>
+						</template>
+						<template v-if="prescribedMedicineStatus=='Declined'">
+							<v-btn color="error darken-4" outline class="white--text" @click="dialogApprove=true">Declined</v-btn>
+						</template>
+						<template v-if="prescribedMedicineStatus=='Done'">
+							<v-btn color="green darken-4" outline class="white--text">Done</v-btn>
+						</template>
+					</v-card-actions>
 				</template>
 				<template v-else>
 					<v-card-text>
@@ -106,7 +111,7 @@
 				<v-card-actions>
 					<v-spacer></v-spacer>
 					<v-btn flat @click="dialog=true;reasonDialog=false">Cancel</v-btn>
-					<v-btn flat @click="newMedicineVal();reasonDialog=false">Submit</v-btn>
+					<v-btn flat @click="reasonSubmit=true;newMedicineVal(false)">Submit</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
@@ -116,12 +121,12 @@
 					<h2>Medicine Accept</h2>
 				</v-card-title>
 				<v-card-text>
-					Do you want to change the status of this medicine to <b>"Done"</b>?
+					Do you want to change the status of this medicine list to <b>"Done"</b>?
 				</v-card-text>
 				<v-card-actions>
 					<v-spacer></v-spacer>
 					<v-btn flat @click="dialogApprove=false">Cancel</v-btn>
-					<v-btn flat @click="newMedicineVal">Confirm</v-btn>
+					<v-btn flat @click="newMedicineVal(true)">Confirm</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
@@ -134,6 +139,7 @@ import axios from 'axios';
 			this.eventHub.$on('showScheduler', val =>{
 				this.patient = val.data;
 				this.medscheduler = true;
+				this.eventColor = this.setEventColor(this.patient.status);
 				this.fetchMedicineSchedule();
 			});
 		},
@@ -144,65 +150,74 @@ import axios from 'axios';
 				arrayEvents: [],
 				datesList : null,
 				reasonDialog : false,
+				reasonSubmit : false,
 				medscheduler : false,
 				date: new Date().toISOString().substr(0, 10),
 				reason: "",
 				prescribedMedicine : [],
-				checkedMedicines : []
+				prescribedMedicineStatus : '',
+				checkedMedicines : [],
+				eventColor : '',
 			}
 		},
 		methods : {
 			openModal : function(modal,patient){
 				this.medscheduler = false;
-				this.eventHub.$emit(modal, patient);
+				this.eventHub.$emit(modal, {data : patient});
 			},
-			takeMedicine : function(i,is_taken){
-				this.checkedMedicines = this.prescribedMedicine[i];
-				if(is_taken == true){
-					this.prescribedMedicine[i].is_taken = true;
-					this.prescribedMedicine[i].status = "Done";
-					this.checkedMedicines = this.prescribedMedicine[i];
-					this.newMedicineVal();
-				}else{
-					this.dialog = false;
-					this.reasonDialog = true;
-				}
-			},
-			newMedicineVal : function(){
-				this.checkedMedicines.status = (this.checkedMedicines.is_taken==true) ? 'Done' : 'Declined';
+			newMedicineVal : function(is_taken){
 				let _this = this,
+				submit = false,
 				formData = new FormData();
 				formData.append('date',this.date);
-				formData.append('patientid',this.patient.id);
-				formData.append('medicineid', this.checkedMedicines.id);
 				formData.append('reason',this.reason);
-				formData.append('status', this.checkedMedicines.status);
-				axios.create({
-					baseURL : this.apiUrl,
-					headers : {
-						'Authorization' : `Bearer ${this.token}`
+				formData.append('patientid',this.patient.id);
+				
+				if(is_taken == false){
+					this.dialog = false;
+					this.reasonDialog = true;
+					formData.append('status', "Declined");
+					if(this.reasonSubmit == true){
+						this.reasonDialog=false;
+						submit = true;
 					}
-				})
-				.post('/medicine/newvalue',formData)
-				.then(function(res){
-					let snackbarMessage = (_this.checkedMedicines.status=="Done")? "Medicine accepted!" : "Medicine declined!";
-					let returnval = { message : snackbarMessage, icon : "done", color : "green"};
-					if(res.data.status){
-						_this.eventHub.$emit('showSnackBar', returnval)
-					}
-					if(_this.checkedMedicines.status == 'Declined'){
-						_this.checkedMedicines.is_taken = true;
-						_this.dialog = true;
-					}
-					_this.dialogApprove=false;
-				});
+				}else{
+					formData.append('status', "Done");
+					submit = true;
+				}
+
+				if(submit==true){
+					axios.create({
+						baseURL : this.apiUrl,
+						headers : {
+							'Authorization' : `Bearer ${this.token}`
+						}
+					})
+					.post('/medicine/newvalue',formData)
+					.then(function(res){
+						let snackbarMessage = (is_taken==true)? "Medicine accepted!" : "Medicine declined!";
+						let returnval = { message : snackbarMessage, icon : "done", color : "green"};
+
+						if(is_taken == false){
+							_this.prescribedMedicineStatus = "Declined";
+							_this.reasonSubmit = false;
+						}else{
+							_this.prescribedMedicineStatus = "Done";
+						}
+
+						if(res.data.status){
+							_this.eventHub.$emit('showSnackBar', returnval)
+						}
+						_this.dialogApprove=false;
+					});
+				}
+
 				this.reason = "";
 			},
 			fetchMedicineSchedule : function(){
 				let _this = this,
-				id = this.patient.id,
 				category = this.patient.category,
-				date = this.patient.consultationdate;
+				date = this.patient.datestart;
 				axios.create({
 					baseURL : _this.apiUrl,
 					headers : {
@@ -226,12 +241,25 @@ import axios from 'axios';
 					})
 					.get('/patient/app/medicine?id='+this.patient.id+'&date='+this.date)
 					.then(function(res){
-						_this.prescribedMedicine = res.data.data;
+						_this.prescribedMedicine = res.data.data.list;
+						_this.prescribedMedicineStatus = res.data.data.status;
 					});
 				}else{
 					this.prescribedMedicine = [];
+					this.prescribedMedicineStatus = "";
 				}
 			},
+			setEventColor : function(status){
+				let color = "";
+				if(status == "Success"){
+					color = "yellow darken-3";
+				}else if(status == "Discontinuation"){
+					color = "red";
+				}else if(status == "Ongoing"){
+					color = "cyan";
+				}
+				return color;
+			}
 		}
 	};
 </script>

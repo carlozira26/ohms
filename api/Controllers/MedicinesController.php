@@ -6,6 +6,7 @@ use Models\PatientMedicinesModel;
 use Models\IntakeLogsModel;
 use Models\PatientIntakeModel;
 use Models\PatientsModel;
+use Models\PatientLogsModel;
 use \Firebase\JWT\JWT;
 
 class MedicinesController{
@@ -25,16 +26,9 @@ class MedicinesController{
 		$body = $request->getParsedBody();
 		$type = $args['type'];
 		if($type == "new"){
-			$medicineSave = MedicinesModel::create(array(
-				"brandname" => $body['brandName'],
-				"genericname" => $body['genericName'],
-				"manufacturer" => $body['manufacturer'],
-				"expiration" => $body['expiration'],
-				"description" => $body['description'],
-				"is_primary" => ($body['is_primary']) ? "Y" : "N",
-			));
 			$this->response["message"] = "Successfully added!";
 			$this->response["status"] = true;
+			
 		}else{
 			$medicineSave = MedicinesModel::where('id',$body['id'])
 				->update(array(
@@ -48,7 +42,6 @@ class MedicinesController{
 			$this->response["message"] = "Successfully edited!";
 			$this->response["status"] = true;
 		}
-
 		return $this->container->response->withJson($this->response);
 	}
 	public function MedicineList($request, $response, $args){
@@ -107,11 +100,15 @@ class MedicinesController{
 
 	public function submitPatientMedicine($request, $response, $args){
 		$body = $request->getParsedBody();
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($request, $this->container);
+		
 		$MedicineList = json_decode($body['patientMedicineList'],true);
 		$patientID = $body['id'];
 		$category = $body['category'];
+		$status = $body['status'];
 		$medList = array();
-		$date = date('2020-06-05');
+		$date = date('Y-m-d');
 
 		$patientSchedule = implode(',',$this->getWeeklySchedule($date,$category));
 		foreach($MedicineList as $newMedicine){
@@ -122,7 +119,7 @@ class MedicinesController{
 			if($selectID){
 				array_push($medList, $selectID['id']);
 				PatientMedicinesModel::where('uid',$patientID)
-				->where('medicineid', $selectID['id'])
+				->where('id', $selectID['id'])
 				->update(array(
 					'medicineid' => $newMedicine['medicineID'],
 					'dosage' => $newMedicine['medicineDosage'],
@@ -146,7 +143,18 @@ class MedicinesController{
 			->where('is_active','Y')
 			->whereNotIn('id',$medList)
 			->update(array('is_active'=>'N'));
-		$sched = PatientsModel::where('id',$patientID)->update(array('medicine_schedule'=>$patientSchedule));
+
+		if($status == "New"){
+			$sched = PatientsModel::where('id',$patientID)
+				->update(array('medicine_schedule'=>$patientSchedule, "datestart" => $date, 
+				"dateend" => $this->getEndDate($date,$category)));
+			PatientLogsModel::create(array(
+				'uid' => $patientID,
+				'status' => "Ongoing",
+				"updated_by" => $user['lastname'].", ".$user['firstname']
+			));
+		}
+
 		$this->response["message"] = "Successfully Added!";
 		$this->response['status'] = true;
 		return $this->container->response->withJson($this->response);
@@ -157,9 +165,10 @@ class MedicinesController{
 			$medicineList = MedicinesModel::selectRaw("id,concat(brandname,':',genericname) as medicinename");
 			$medicineList = $medicineList->where('is_primary','Y')->where('is_active','Y')->get();
 		}else{
-			$medicineList = MedicinesModel::selectRaw("medicines.id as id, concat(brandname,':',genericname) as medicinename")
+			$medicineList = MedicinesModel::selectRaw("medicines.id as id, concat(brandname,':',genericname) as medicinename, dosage, pieces")
 				->join('patient_medicine','medicines.id','=','patient_medicine.medicineid')
 				->where('uid',$data['id'])
+				->where('patient_medicine.is_active','Y')
 				->get();
 		}
 
@@ -171,52 +180,140 @@ class MedicinesController{
 	}
 	public function newMedicineVal($req, $res, $args){
 		$body = $req->getParsedBody();
-		$date = (isset($body['date'])) ?  $body['date'] : date('Y-m-d');
+		$date = (isset($body['date'])) ?  date('Y-m-d',strtotime($body['date'])) : date('Y-m-d');
+		$Utils = new Utils();
+		$user = $Utils->getUserFromBearerToken($req, $this->container);
+
 		$patientIntake = new PatientIntakeModel;
 		$patientIntake->status = $body['status'];
-		$patientIntake->medicineid = $body['medicineid'];
 		$patientIntake->reason = $body['reason'];
 		$patientIntake->patient_id = $body['patientid'];
 		$patientIntake->date = $date;
+		$patientIntake->distributor = $user['lastname'].", ".$user['firstname'];
 		$patientIntake->save();
+		
+		if($body['status']=="Declined"){
+			$patient = PatientsModel::select('mobilenumber')->where('id',$body['patientid'])->first();
+			$contactNumber = str_replace('+63','0',$patient['mobilenumber']);
+			$chatController = new ChatController($this->container);
+			$message = $chatController->messageSend($contactNumber, 'Reminder: Please go to the clinic to take your medicine.');
+		}
 
-		$this->response['status'] = true;
-		return $this->container->response->withJson($body);
+		$this->response['status'] = $body;
+		return $this->container->response->withJson($this->response);
 	}
 
 	public function getSchedule($req, $res, $args){
 		$body = $req->getQueryParams();
 		$category = $body['category'];
 		$date = $body['date'];
+		$arr = $this->getDateSchedule($category, $date);
+		
+		return $this->container->response->withJson($arr);
+	}
+
+	public function getChartData($req, $res, $args){
+		$body = $req->getQueryParams();
+		$id = $body['id'];
+		$category = $body['category'];
+		$date = $body['date'];
+		$xaxis = array();
+		$arr = array();
+		$series = array();
+		$logs = PatientIntakeModel::select('status','date')
+			->where('patient_id', $id)
+			->where('is_active','Y')
+			->orderBy('date','asc')
+			->get();
+		
+		if($category == "MDR"){
+			$arr = $this->MDR($date);
+		}else if($category == "Cat II"){
+			$week = date('l', strtotime($date));
+			if($week == "Monday" || $week == "Tuesday" || $week == "Thursday"){
+				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+34 weeks")), 3);
+			}else if($week == "Wednesday" || $week == "Friday"){
+				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+34 weeks")), 6);
+			}
+		}else if($category == "Cat I"){
+			$week = date('l', strtotime($date));
+			if($week == "Friday"){
+				$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+26 weeks")), 4);
+			}else{
+				$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+26 weeks")), 2);
+			}
+		}
+		$weeknumber = 1;
+		$newlist = array();
+		$weekPercent = $this->getPercentage($category);
+		$adder = 0;
+		foreach($arr as $dates){
+			foreach($logs as $log){
+				if($dates == $log['date']){
+					$week = date('W',strtotime($dates));
+					if($log['status']=="Done"){
+						$newlist[$week] = $weekPercent;
+					}else{
+						$newlist[$week] = 0.0;
+					}
+				}
+			}
+		}
+
+		foreach($newlist as $data){
+			$xaxis[] = "Week ".$weeknumber;
+			$adder += $data;
+			$series[] = array(
+				"name" => "Week ".$weeknumber,
+				"data" => number_format($adder,2)
+			);
+			$weeknumber++;
+		}
+		$this->response['status'] = (count($xaxis)>0)?true:false;
+		$this->response['xaxis'] = $xaxis;
+		$this->response['series'] = $series;
+		
+		return $this->container->response->withJson($this->response);
+	}
+	private function getPercentage($category){
+		if($category=='Cat I'){
+			$ret = 100/26;
+		}else if($category=='Cat II'){
+			$ret = 100/34;
+		}else{
+			$ret = 100/52;
+		}
+		return $ret;
+	}
+	private function getDateSchedule($category, $date){
 		$arr = array();
 		if($category == "MDR"){
 			$arr = $this->MDR($date);
 		}else if($category == "Cat II"){
 			$week = date('l', strtotime($date));
 			if($week == "Monday" || $week == "Tuesday" || $week == "Thursday"){
-				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+8 months")), 3);
+				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+34 weeks")), 3);
 			}else if($week == "Wednesday" || $week == "Friday"){
-				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+8 months")), 6);
+				$arr = $this->CatII($date, date('Y-m-d', strtotime($date ."+34 weeks")), 6);
 			}
 		}else if($category == "Cat I"){
 			$week = date('l', strtotime($date));
-			$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+2 months")), 2);
 			if($week == "Friday"){
-				$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+2 months")), 4);
+				$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+26 weeks")), 4);
+			}else{
+				$arr = $this->CatI($date, date('Y-m-d', strtotime($date . "+26 weeks")), 2);
 			}
 		}
-		return $this->container->response->withJson($arr);
+		return $arr;
 	}
-
 	private function MDR($date){
-		$nxtYear = date("Y-m-d",strtotime($date.'+1 year'));
+		$nxtYear = date("Y-m-d",strtotime($date.'+365 days'));
 		$str = strtotime($nxtYear) - strtotime($date);
 		$diff = floor($str/3600/24);
 
 		for($x = 0; $x < $diff; $x++){
 			$arr[] = date('Y-m-d', strtotime($date . "+$x days"));
 		}
-		
 		return $arr;
 	}
 
@@ -247,7 +344,11 @@ class MedicinesController{
 			sort($dates);
 			$y = $y+2;
 		}
-		return $dates;
+
+		for($x=0;$x<102;$x++){
+			$datelist[] = $dates[$x];
+		}
+		return $datelist;
 	}
 	
 	private function CatI($dateFromString, $dateToString,$loop){
@@ -274,9 +375,21 @@ class MedicinesController{
 			sort($dates);
 			$y = $y+2;
 		}
-		return $dates;
+		for($x=0;$x<52;$x++){
+			$datelist[] = $dates[$x];
+		}
+		return $datelist;
 	}
-
+	private function getEndDate($date,$category){
+		if($category == 'MDR'){
+			$enddate = date('Y-m-d',strtotime($date."+52 weeks"));
+		}else if($category == "Cat II"){
+			$enddate = date('Y-m-d',strtotime($date."+34 weeks"));
+		}else if($category == "Cat I"){
+			$enddate = date('Y-m-d',strtotime($date."+26 weeks"));
+		}
+		return $enddate;
+	}
 	private function getWeeklySchedule($date,$category){
 		if($category == "MDR"){
 			$arrdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];

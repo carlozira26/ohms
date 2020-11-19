@@ -84,6 +84,8 @@ class UsersController{
 					'id' => $user->id,
 					'fullname' => ucwords(strtolower($fullname)),
 					'role' => $role,
+					'category' => $user->category,
+					'datestart' => $user->datestart,
 					'status' => $user->status
 				);
 			}
@@ -345,18 +347,21 @@ class UsersController{
 		$Utils = new Utils();
 		$user = $Utils->getPatientFromBearerToken($req, $this->container);
 
-		$doctor = PatientsModel::select('doctor_id')->where('id',$user['id'])->first();
-		$profile = UsersModel::select('firstname','lastname','subspecialization','specialization','clinic_name','clinic_address','contact_number','image_path','schedule','licensenumber')
-			->join('doctor_schedule','users.id','=','doctor_schedule.uid')
-			->where('users.id',$doctor['doctor_id'])
-			->first();
+		if($user['doctor_id'] != null){
+			$profile = UsersModel::select('firstname','lastname','subspecialization','specialization','clinic_name','clinic_address','contact_number','image_path','licensenumber')
+				->where('users.id',$user['doctor_id'])->first();
+			$schedule = DoctorScheduleModel::select('schedule')->where('uid',$user['doctor_id'])->first();
 			$licenseEncrypter = $this->container['changeLicense'];
-
+			$profile['firstname'] = ucwords($profile['firstname']);
+			$profile['lastname'] = ucwords($profile['lastname']);
+			$profile['subspecialization'] = ($profile['subspecialization']!='null')? $profile['subspecialization'] : "";
 			$profile['licensenumber'] = $licenseEncrypter($profile['licensenumber']);
+			$profile['schedule'] = ($schedule!=null)? $schedule['schedule'] : "";
 			if($profile){
 				$this->response['data'] = $profile;
 				$this->response['status'] = true;
 			}
+		}
 		return $this->container->response->withJson($this->response);
 	}
 }

@@ -17,32 +17,15 @@
                                                 Medicine Schedule
                                             </v-card-title>
                                             <v-card-text>  
-                                                <v-calendar :now="today" :value="today" color="primary">
-                                                    <template v-slot:day="{ date }">
-                                                        <template v-for="event in eventsMap[date]">
-                                                            <v-menu :key="event.title" v-model="event.open" full-width offset-x>
-                                                                <template v-slot:activator="{ on }">
-                                                                    <div v-if="!event.time" v-ripple class="my-event" style="background-color:#424242" v-on="on" v-html="event.title"></div>
-                                                                </template>
-                                                                <v-card color="grey lighten-4" min-width="370px" flat>
-                                                                    <v-toolbar color="green darken-4" dark>
-                                                                        <v-btn icon>
-                                                                            <v-icon>fa-pills</v-icon>
-                                                                        </v-btn>
-                                                                        <v-toolbar-title v-html="event.title"></v-toolbar-title>
-                                                                        <v-spacer></v-spacer>
-                                                                        <v-btn flat icon color="white" @click="event.open == !event.open">
-                                                                            <v-icon small>fa-times</v-icon>
-                                                                        </v-btn>
-                                                                    </v-toolbar>
-                                                                    <v-card-title primary-title>
-                                                                        <span v-html="event.details"></span>
-                                                                    </v-card-title>
-                                                                </v-card>
-                                                            </v-menu>
-                                                        </template>
-                                                    </template>
-                                                </v-calendar>
+                                                <v-date-picker
+                                                    full-width
+                                                    no-title
+                                                    v-model="date"
+                                                    :events="arrayEvents"
+                                                    color="green darken-4"
+                                                    event-color="green darken-2"
+                                                    @change="fetchMedicine"
+                                                ></v-date-picker>
                                             </v-card-text>
                                         </v-card>
                                     </v-flex>
@@ -56,41 +39,22 @@
                                 </v-card>
                                 <v-card max-height="373px" min-height="373px" style="overflow:auto">
                                     <v-card-text>
-                                        <template v-if="todaysMedicine.length > 0">
-                                            <template v-for="(timeintake,index) in todaysMedicine">
-                                                <v-list dense two-line subheader :key="index">
-                                                    <v-subheader class="font-weight-bold">{{timeintake.time}}</v-subheader>
+                                        <template v-if="prescribedMedicine.length > 0">
+                                            <template v-for="(medicine,i) in prescribedMedicine">
+                                                <v-list dense :key="`medicine-${i}`">
+                                                    <v-list-tile>
+                                                        <v-list-tile-action>
+                                                            <v-icon v-if="medicine.status == 'Done'" color="green darken-3">fas fa-dot-circle</v-icon>
+                                                            <v-icon v-else color="red darken-3">far fa-dot-circle</v-icon>
+                                                        </v-list-tile-action>
+                                                        {{medicine.brandname}} : {{medicine.genericname}}
+
+                                                        <v-spacer></v-spacer>
+                                                        <template v-if="medicine.status == 'Declined'">
+                                                            <v-icon small color="red">fa-exclamation-circle</v-icon>
+                                                        </template>
+                                                    </v-list-tile>
                                                 </v-list>
-                                                <template v-for="(medicine,i) in timeintake.medicine">
-                                                    <v-list dense :key="`medicine-${index}-${i}`">
-                                                        <v-list-tile>
-                                                            <v-list-tile-action>
-                                                                <!-- <template v-if="medicine.selected == false">
-                                                                    <v-checkbox @change="takeMedicine(index,i,medicine.name)" v-model="medicine.selected"></v-checkbox>
-                                                                </template>
-                                                                <template v-else>
-                                                                    <v-checkbox disabled v-model="medicine.selected"></v-checkbox>
-                                                                </template> -->
-                                                                <v-icon v-if="medicine.selected == true" color="green darken-3">fas fa-dot-circle</v-icon>
-                                                                <v-icon v-else color="red darken-3">far fa-dot-circle</v-icon>
-                                                            </v-list-tile-action>
-                                                            {{medicine.name}}
-                                                            <!-- <v-spacer></v-spacer>
-                                                            <v-menu open-on-hover right bottom>
-                                                                <template v-slot:activator="{ on }">
-                                                                    <v-btn fab small icon><v-icon v-on="on" color="green darken-4">fa-info-circle</v-icon></v-btn>
-                                                                </template>
-                                                                <v-card left width="200px">
-                                                                    <v-card-text>
-                                                                        <h4>Medicine Instructions</h4>
-                                                                        {{ medicine.instructions }}
-                                                                    </v-card-text>
-                                                                </v-card>
-                                                            </v-menu> -->
-                                                        </v-list-tile>
-                                                    </v-list>
-                                                </template>
-                                                <v-divider :key="`divider-${index}`"></v-divider>
                                             </template>
                                         </template>
                                         <template v-else>
@@ -145,14 +109,14 @@ import VueCookies from "vue-cookies";
 export default {
     created : function(){
         this.token = VueCookies.get(this.cookieKey).token;
-        this.patientid = VueCookies.get(this.cookieKey).data.id;
+        this.patient = VueCookies.get(this.cookieKey).data;
         this.fetchPatientFile();
-        this.fetchMedicineSchedule(this.patientid);
+        this.fetchMedicineSchedule();
     },
     data: () => ({
         viewResultImage : false,
         diagnosis : ["Sputum Result", "CXR Result", "TST Result", "Other Examination Result"],
-        today: new Date().toISOString().substr(0, 10),
+        date: new Date().toISOString().substr(0, 10),
         open : [],
         model : "",
         url : "",
@@ -161,18 +125,11 @@ export default {
             image: 'fa-file-image',
         },
         diagnosticLogs : [],
-        events: [],
-        todaysMedicine : [],
-        checkedMedicines : [],
-        medicineSchedule : [],
+        prescribedMedicine : [],
+        arrayEvents : [],
+        patient : [],
     }),
-    computed: {
-        eventsMap () {
-            const map = {}
-            this.events.forEach(e => (map[e.date] = map[e.date] || []).push(e))
-            return map
-        }
-    },
+
     methods: {
         viewImage : function(file,remarks){
             this.remarks = "";
@@ -200,140 +157,40 @@ export default {
                 _this.diagnosticLogs = res.data;
             });
         },
-        fetchMedicineSchedule : function(id){
-            let _this = this;
+
+        fetchMedicineSchedule : function(){
+            let _this = this,
+            category = this.patient.category,
+            date = this.patient.datestart;
             axios.create({
                 baseURL : _this.apiUrl,
                 headers : {
                     'Authorization' : `Bearer ${this.token}`
                 },
             })
-            .get('/medicine/patient/schedule/'+id)
+            .get('/medicine/patient/schedule?date='+date+"&category="+category)
             .then(function(res){
-                _this.medicineSchedule = res.data.data;
-                _this.plotCalendarEvents();
-                _this.getMedicineVal();
+                _this.arrayEvents = res.data;
+                _this.fetchMedicine();
             });
         },
-
-        plotCalendarEvents : function(){
-            let evt = [];
-            let _this = this;
-            Object.keys(_this.medicineSchedule).forEach(function (key) {
-                let prescribedMedicine = "<ul>",
-                newdate = key;
-                Object.keys(_this.medicineSchedule[newdate]).sort().forEach(function(key) {
-                    prescribedMedicine += "<li class='font-weight-bold text-xs-left'>"+key+"</li>";
-                    prescribedMedicine += "<ul>";
-                    for(let i in _this.medicineSchedule[newdate][key]){
-                        prescribedMedicine += "<li class='text-xs-left'>"+_this.medicineSchedule[newdate][key][i]+"</li>";
-                    }
-                    prescribedMedicine += "</ul>";
+        fetchMedicine : function(){
+            if(this.arrayEvents.indexOf(this.date) !== -1){
+                let _this = this;
+                axios.create({
+                    baseURL : this.apiUrl,
+                    headers : {
+                        'Authorization' : `Bearer ${this.token}`
+                    },
+                })
+                .get('/patient/app/medicine?id='+this.patient.id+'&date='+this.date)
+                .then(function(res){
+                    _this.prescribedMedicine = res.data.data;
                 });
-                prescribedMedicine += "</ul>";
-                evt = {
-                    title: 'Medicine Time Intake',
-                    details: prescribedMedicine,
-                    date: key,
-                    open: false
-                };
-                _this.events.push(evt);  
-            });
-        },
-        todaysCheckList : function(){
-            this.todaysMedicine = [];
-            let _this = this,
-            datelist = [],
-            val = [],
-            y = 0,
-            instr = "";
-            Object.keys(_this.medicineSchedule).forEach(function (key) {
-                datelist.push(key);
-            });
-
-            if(datelist.includes(_this.today)){
-                Object.keys(_this.medicineSchedule[_this.today]).sort().forEach(async function(key) {
-                    let list = [];
-                    for(let medicine in _this.medicineSchedule[_this.today][key]){ // tagged
-                        let sel = false;
-                        instr = await _this.getInstructions(_this.medicineSchedule[_this.today][key][medicine], _this.apiUrl, _this.token);
-                        if(_this.checkedMedicines.length > 0){
-                            if(_this.checkedMedicines[y] == "Y"){
-                                sel = true;
-                            }
-                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], instructions: instr.data, selected : sel });
-                        }else{
-                            val.push("N"),
-                            list.push({ name : _this.medicineSchedule[_this.today][key][medicine], instructions: instr.data, selected : sel });
-                        }
-                        y = y+1;
-                    }
-                    _this.todaysMedicine.push({
-                        time : key,
-                        medicine : list,
-                    });
-                }); 
-
-                if(_this.checkedMedicines.length == 0){
-                    _this.checkedMedicines = val;
-                    _this.newMedicineVal('create');
-                }
-
+            }else{
+                this.prescribedMedicine = [];
             }
         },
-        getInstructions : async (medicine, url, token) =>{
-            return axios.create({
-                baseURL : url,
-                headers : {
-                    'Authorization' : `Bearer ${token}`
-                }
-            })
-            .get('/medicine/instructions?medicine='+medicine);
-        },
-        getMedicineVal : function(){
-            let _this = this;
-            axios.create({
-                baseURL : this.apiUrl,
-                headers : {
-                    'Authorization' : `Bearer ${this.token}`
-                }
-            })
-            .get('/medicine/value')
-            .then(function(res){
-                if(res.data.status){
-                    _this.checkedMedicines = res.data.data.intake_value.split(",");
-                }
-                
-                _this.todaysCheckList();
-            });
-        },
-        takeMedicine : function(index, i,medicinename){
-            this.checkedMedicines = [];
-            for(let timetake in this.todaysMedicine){
-                for(let med in this.todaysMedicine[timetake].medicine){
-                    let val = "N";
-                    if(this.todaysMedicine[timetake].medicine[med].selected == true){
-                        val = "Y";
-                    }
-                    this.checkedMedicines.push(val);
-                }
-            }
-            this.newMedicineVal('update', medicinename);
-        },
-        newMedicineVal : function(val, medicinename){
-            let _this = this,
-            formData = new FormData();
-            formData.append('newVal',JSON.stringify(_this.checkedMedicines));
-            formData.append('medicinename',medicinename);
-            formData.append('type',val);
-            axios.create({
-                baseURL : this.apiUrl,
-                headers : {
-                    'Authorization' : `Bearer ${this.token}`
-                }
-            })
-            .post('/medicine/newvalue',formData);
-        }
     }
 };
 </script>

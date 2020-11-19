@@ -56,7 +56,6 @@ const router =  new Router({
 		},
 	]
 })
-
 router.beforeEach((to, from, next) => {
     let cookie = VueCookies.get( mixins.data().cookieKey );
     if(cookie == null && to.name != 'login'){

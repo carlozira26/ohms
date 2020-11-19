@@ -69,6 +69,10 @@
 				<v-toolbar-title class="ml-0 pl-3">
 					<h2>OHMS</h2>
 				</v-toolbar-title>
+				<v-spacer></v-spacer>
+					<v-btn flat icon @click="openBroadcastMessage">
+						<v-icon small>fa-envelope</v-icon>
+					</v-btn>
 			</v-toolbar>
 		</template>
 		<template v-else>
@@ -154,6 +158,7 @@
 		<view-logs></view-logs>
 		<view-doctor-schedule></view-doctor-schedule>
 		<view-change-credential></view-change-credential>
+		<view-broadcast-message></view-broadcast-message>
 	</div>
 </template>
 <script>
@@ -164,6 +169,7 @@ import viewDoctor from './modal/view-doctor.vue';
 import viewMessage from './modal/messenger.vue';
 import viewDoctorSchedule from './modal/doctor-schedule.vue';
 import viewChangeCredential from './modal/change-credential.vue';
+import viewBroadcastMessage from './modal/broadcast-message.vue';
 
 export default {
 	created : function(){
@@ -182,6 +188,7 @@ export default {
 		'view-logs'    : openLogs,
 		'view-doctor-schedule'    : viewDoctorSchedule,
 		'view-change-credential' : viewChangeCredential,
+		'view-broadcast-message' : viewBroadcastMessage,
 	},
 	data : () => ({
 		connect : '',
@@ -233,13 +240,16 @@ export default {
 			this.eventHub.$emit('viewMessage', { 'wsconnect' : this.wsconnect});
 		},
 		openLogs : function(){
-			this.eventHub.$emit('viewLogs', {'patientID' : this.user.id});
+			this.eventHub.$emit('viewIntakeLogs', {'patientID' : this.user.id});
 		},
 		openDoctorSchedule : function(){
 			this.eventHub.$emit('viewDoctorSchedule', true);
 		},
 		openChangeCredential : function(){
 			this.eventHub.$emit('showChangeCredentials', this.user.id);
+		},
+		openBroadcastMessage : function(){
+			this.eventHub.$emit('showBroadcastMessage', true);
 		}
 	}
 };	

@@ -2,6 +2,11 @@
 	<div>
 		<v-container>
 			<v-text-field single-line full-width hide-details prepend-icon="search" v-model="search" @keyup="fetchPatients" label="Search id or name here.."></v-text-field>
+			<!-- <div>
+				<v-btn flat icon @click="backDate"><v-icon color="grey darken-2">fa-chevron-left</v-icon></v-btn>
+				<label class="title">{{ formatDate(date) }}</label>
+				<v-btn flat icon @click="forwardDate"><v-icon color="grey darken-2">fa-chevron-right</v-icon></v-btn>
+			</div> -->
 			<table class="theme--light fluid" id="tabletracker">
 				<thead>
 					<tr class="grey lighten-4" style="border-bottom:1px solid #333;">
@@ -10,7 +15,10 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(patient,id) in patientList" v-bind:key="id" @click="selectPatient(id)">
+					<tr v-if="patientList.length == 0">
+						<td colspan="2">No Patient Found</td>
+					</tr>
+					<tr v-else v-for="(patient,id) in patientList" v-bind:key="id" @click="selectPatient(id)">
 						<td>{{patient.patient_id}}</td>
 						<td>{{patient.firstname + " " + patient.lastname}}</td>
 					</tr>
@@ -31,6 +39,7 @@
 import VueCookies from 'vue-cookies';
 import axios from 'axios';
 import Patient from './patient.vue';
+import moment from 'moment';
 
 export default {
 	components : {
@@ -40,7 +49,6 @@ export default {
 		this.token = VueCookies.get(this.cookieKey).token;
 		this.fetchPatients();
 		this.eventHub.$on('snackBar', val => {
-			console.log(val);
 			this.snackbarMessage = val;
 			this.snackbar = true;
 		});
@@ -52,6 +60,7 @@ export default {
 			snackbar : false,
 			search : "",
 			snackbarMessage : "",
+			date : new Date().toISOString().substr(0, 10),
 		}
 	},
 	methods : {
@@ -63,14 +72,25 @@ export default {
 					'Authorization' : `Bearer ${this.token}`
 				}
 			})
-			.get('/patients/app/list?search='+this.search)
+			.get('/patients/app/list?search='+this.search+"&date="+this.date)
 			.then(function(res){
 				_this.patientList = res.data.data;
 			});
 		},
 		selectPatient : function(id){
-			this.eventHub.$emit('viewPatient', { patient: this.patientList[id] } );
-		}
+			this.eventHub.$emit('viewPatient', { patient: this.patientList[id], date : this.date } );
+		},
+		formatDate : function(date){
+			return moment(date).format('l');
+		},
+		// forwardDate : function(){
+		// 	this.date = moment(this.date).add(1, 'days').format('l');
+		// 	this.fetchPatients();
+		// },
+		// backDate : function(){
+		// 	this.date = moment(this.date).subtract(1, 'days').format('l');
+		// 	this.fetchPatients();
+		// }
 	}
 };
 </script>

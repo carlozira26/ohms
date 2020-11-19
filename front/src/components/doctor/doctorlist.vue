@@ -40,17 +40,17 @@
 										<td>
 											<v-tooltip bottom>
 												<template v-slot:activator="{ on }">
-													<v-btn v-on="on" fab dark small color="green darken-4" @click="doctorModal('edit',index)"><v-icon dark>fa fa-id-card</v-icon></v-btn>
+													<v-btn v-on="on" icon dark color="green darken-4" @click="doctorModal('edit',index)"><v-icon small dark>fa fa-id-card</v-icon></v-btn>
 												</template>
-											<span>Doctor's Information</span>
+												<span>Doctor's Information</span>
 											</v-tooltip>
 											<v-tooltip bottom>
 												<template v-slot:activator="{ on }">
 													<template v-if="model.is_active == 'Y'">
-														<v-btn v-on="on" fab dark small color="red darken-4" @click="deactivateDoctorAccount(model.id,'deactivate')"><v-icon dark>fa fa-user-times</v-icon></v-btn>
+														<v-btn v-on="on" icon dark color="red darken-4" @click="deactivateDoctorAccount(model.id,'deactivate')"><v-icon small dark>fa fa-user-times</v-icon></v-btn>
 													</template>
 													<template v-else>
-														<v-btn v-on="on" fab dark small color="red darken-4" @click="deactivateDoctorAccount(model.id,'reactivate')"><v-icon dark>fa fa-user-check</v-icon></v-btn>
+														<v-btn v-on="on" icon dark color="red darken-4" @click="deactivateDoctorAccount(model.id,'reactivate')"><v-icon small dark>fa fa-user-check</v-icon></v-btn>
 													</template>
 												</template>
 											<span v-if="model.is_active == 'Y'">Deactivate Account</span>
@@ -180,19 +180,6 @@
 
 				profile : [],
 
-				firstName : "",
-				middleName : "",
-				lastName : "",
-				license : null,
-				specialization : null,
-				dateofBirth : "",
-				doctorsgender : "",
-				email : "",
-				password:"",
-				mobileNumber : "",
-				clinicName : null,
-				clinicAddress : null,
-
 				isadmin:false
 			}
 		},
@@ -261,19 +248,19 @@
 				let _this = this,
 				formData = new FormData();
 
-				formData.append('firstname',_this.firstName);
-				formData.append('middlename',_this.middleName);
-				formData.append('lastname',_this.lastName);
-				formData.append('birthdate',_this.dateofBirth);
-				formData.append('license',_this.license);
-				formData.append('specialization',_this.specialization);
-				formData.append('gender',_this.doctorsgender);
-				formData.append('email',_this.email);
-				formData.append('password',_this.password);
-				formData.append('contactnumber',_this.mobileNumber);
-				formData.append('clinicname',_this.clinicName);
-				formData.append('clinicaddress',_this.clinicAddress);
-				formData.append('isadmin',_this.isadmin);
+				formData.append('firstname',_this.profile.firstName);
+				formData.append('middlename',_this.profile.middleName);
+				formData.append('lastname',_this.profile.lastName);
+				formData.append('birthdate',_this.profile.dateofBirth);
+				formData.append('license',_this.profile.license);
+				formData.append('specialization',_this.profile.specialization);
+				formData.append('gender',_this.profile.doctorsgender);
+				formData.append('email',_this.profile.email);
+				formData.append('password',_this.profile.password);
+				formData.append('contactnumber',_this.profile.mobileNumber);
+				formData.append('clinicname',_this.profile.clinicName);
+				formData.append('clinicaddress',_this.profile.clinicAddress);
+				formData.append('isadmin',_this.profile.isadmin);
 				if(this.$refs.vForm.validate()){
 					axios.create({
 						baseURL : this.apiUrl,

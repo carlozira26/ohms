@@ -22,7 +22,8 @@
 								<thead>
 									<tr class="grey lighten-4" style="border-bottom:1px solid #333">
 										<th class="font-weight-bold text-xs-center" style="width:20%;">MEDICINE NAME</th>
-										<th class="font-weight-bold text-xs-center" style="width:10%;">STATUS</th>
+										<th class="font-weight-bold text-xs-center" style="width:10%;">MANUFACTURER</th>
+										<th class="font-weight-bold text-xs-center" style="width:10%;">DESCRIPTION</th>
 										<th class="font-weight-bold text-xs-center" style="width:20%;">ACTIONS</th>
 									</tr>
 								</thead>
@@ -35,7 +36,8 @@
 									<template v-else>
 										<tr v-for="(medicine,index) in medicineList" v-bind:key="index">
 											<td>{{ medicine.brandname + " (" + medicine.genericname + ")"}}</td>
-											<td>{{ medicine.is_active }}</td>
+											<td>{{ medicine.manufacturer }}</td>
+											<td>{{ medicine.description }}</td>
 											<td>
 												<v-tooltip bottom>
 													<template v-slot:activator="{ on }">
@@ -137,7 +139,6 @@
 				menu : false,
 				addMedicine : false,
 				medicineListModal : false,
-				dayList : ["Daily","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
 				medicineList : [],
 				search : "",
 				pagination : { page: 1, length : 0 },
@@ -169,6 +170,7 @@
 				.then(function(res){
 					_this.medicineList = res.data.data;
 					_this.pagination.length = Math.ceil(res.data.count.count / 6);
+					console.log(_this.medicineList);
 				});
 			},
 			deleteModal : function(index){

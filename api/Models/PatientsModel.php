@@ -13,7 +13,7 @@ class PatientsModel extends Model{
 
     // Columns that are insertables and must be protected
     protected $fillable = array(
-    	"id", "patient_id", "firstname", "middlename", "lastname", "dateofbirth", "gender", "mobilenumber", "consultationdate", "doctor_id", "status", "drtb", "licensenumber","specialization", "category", "address", "street", "barangay", "city", "remarks", "medicine_schedule", "username","password", "token"
+    	"id", "patient_id", "firstname", "middlename", "lastname", "dateofbirth", "gender", "mobilenumber", "consultationdate", "doctor_id", "status", "drtb", "licensenumber","specialization", "category", "address", "street", "barangay", "city", "remarks", "datestart", "dateend", "medicine_schedule", "username","password", "token"
     );
 
     // Table should have updated_at and created_at columns when this is set to true

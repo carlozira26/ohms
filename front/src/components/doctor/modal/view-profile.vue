@@ -14,13 +14,13 @@
 							<v-divider class="mb-2 mt-2"></v-divider>
 							<v-layout row wrap>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="userData.firstname" type="text"/>
+									<v-text-field label="First Name" :rules="[formRules.required,formRules.textOnly]" v-model="userData.firstname" type="text" persistent-hint readonly hint="Cannot be edited"/>
 								</v-flex>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Middle Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="userData.middlename" type="text"/>
+									<v-text-field label="Middle Name" persistent-hint hint="Cannot be edited" :rules="[formRules.required,formRules.textOnly]" v-model="userData.middlename" type="text" readonly/>
 								</v-flex>
 								<v-flex xs12 md4 class="pa-1">
-									<v-text-field label="Last Name" hint="This field uses maxlength attribute" counter maxlength="20" :rules="[formRules.required,formRules.textOnly]" v-model="userData.lastname" type="text"/>
+									<v-text-field label="Last Name" persistent-hint hint="Cannot be edited" :rules="[formRules.required,formRules.textOnly]" v-model="userData.lastname" type="text" readonly/>
 								</v-flex>
 								<v-flex xs12 md6 class="pa-1">
 									<v-text-field label="Username" persistent-hint hint="Cannot be edited" type="text" v-model="userData.username" :rules="[formRules.required]" readonly/>
@@ -32,10 +32,9 @@
 									<template>
 										<v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y full-width min-width="290px">
 											<template v-slot:activator="{ on }">
-												<v-text-field label="Date of Birth" readonly v-on="on" v-model="userData.dateofbirth" type="text" :rules="[formRules.required]"/>
+												<v-text-field label="Date of Birth" readonly v-on="on" :value="formatDate(userData.dateofbirth)" type="text" :rules="[formRules.required]"/>
 											</template>
-											<v-date-picker color="green darken-4" ref="picker" v-model="dateofbirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
-												<v-btn @click="menu = false" dark block>Close</v-btn>
+											<v-date-picker color="green darken-4" ref="picker" @input="menu=false" v-model="userData.dateofbirth" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01">
 											</v-date-picker>
 										</v-menu>
 									</template>
@@ -96,7 +95,7 @@
 		<v-snackbar v-model="sbar" :color="snackBarColor" right top>
 			<v-icon class="white--text" left>{{ icon }}</v-icon>
 			{{ message }}
-			<v-btn flat @click.native="sbar = false"> &times; </v-btn>
+			<v-btn flat icon @click.native="sbar = false"> &times; </v-btn>
 		</v-snackbar>
 	</div>
 </template>
@@ -124,6 +123,7 @@
 		data: function(){
 			return{
 				userData : [],
+				oldData : [],
 				showHide : false,
 				category: ["Cat I", "Cat II","MDR"],
 				gender: ["Male", "Female"],
@@ -164,6 +164,7 @@
 					if(res.data.status){
 						_this.userData = res.data.data;
 						_this.dateofbirth = _this.userData.dateofbirth;
+						_this.oldData = res.data.data;
 					}
 				});
 			},
@@ -189,19 +190,11 @@
 				})
 				.post('/patient/profile/submit',formData)
 				.then(function(res){
-					if(res.data.status){
-						_this.message = "Successfully submitted!";
-						_this.icon = "check";
-						_this.snackBarColor = "green";
-						_this.sbar = true;
-						_this.dialog = false;
-					}else{
-						_this.snackbarColor = 'red';
-						_this.icon = "close";
-						_this.message = "There's an error while submitting.";
-						_this.sbar = true;
-						_this.dialog = false;
-					}
+					_this.message = "Successfully submitted!";
+					_this.icon = "check";
+					_this.snackBarColor = "green";
+					_this.sbar = true;
+					_this.dialog = false;
 				});
 			},
 			fetchBarangayList : function(){

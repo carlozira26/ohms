@@ -14,7 +14,7 @@
 				</v-card-title>
 				<v-card-text style="overflow:auto">
 					<div class="text-xs-left"><label class="font-weight-bold">Patient ID</label> : # {{ patient.patient_id }} </div>
-					<div class="text-xs-left"><label class="font-weight-bold">Patient Name</label> : {{patient.firstname + " " + patient.lastname}}</div>
+					<div class="text-xs-left"><label class="font-weight-bold">Patient Name</label> : {{ patient.firstname + " " + patient.lastname}}</div>
 					<table class="v-datatable v-table mt-3" style="border:1px solid #ddd">
 						<thead>
 							<tr class="grey lighten-4" style="border-bottom:1px solid #333">
@@ -64,11 +64,11 @@
 							<v-flex>
 								<label>Date of Examination:</label>
 								<v-menu ref="menu" v-model="menu" :close-on-content-click="false">
-								<template v-slot:activator="{ on }">
-									<v-text-field :value="formatDate(diagnostic.examinationdate)" solo readonly v-on="on"></v-text-field>
-								</template>
-								<v-date-picker @input="menu=!menu" v-model="diagnostic.examinationdate" :max="new Date().toISOString().substr(0, 10)" no-title scrollable></v-date-picker>
-						</v-menu>
+									<template v-slot:activator="{ on }">
+										<v-text-field :value="formatDate(diagnostic.examinationdate)" solo readonly v-on="on"></v-text-field>
+									</template>
+									<v-date-picker @input="menu=!menu" v-model="diagnostic.examinationdate" :max="new Date().toISOString().substr(0, 10)" no-title scrollable></v-date-picker>
+								</v-menu>
 							</v-flex>
 							<v-flex>
 							<label>File to upload:</label>
@@ -118,6 +118,13 @@
 				this.patientID = val.id;
 				this.labResults = true;
 				this.patient = val.data;
+				if(this.patient.category == 'Cat I'){
+					this.examinationType = ["CXR Examination"];
+				}else if(this.patient.category == 'Cat II'){
+					this.examinationType = ["Sputum Examination"];
+				}else{
+					this.examinationType = ["TST Examination", "Other Diagnostic Test"];
+				}
 				this.fetchDiagnostics();
 			});
 		},
@@ -127,12 +134,7 @@
 				menu : false,
 				labResults : false,
 				examinationModal:false,
-				examinationType : [
-					"Sputum Examination",
-					"TST Examination",
-					"CXR Examination",
-					"Other Diagnostic Test"
-				],
+				examinationType : [],
 				pagination : { page: 1, length : 0 },
 				image: [],
 				diagnostic : [],
@@ -163,9 +165,8 @@
 				.then(function(res){
 					_this.diagnosticData = res.data.data;
 					for(let i in _this.diagnosticData){
-						_this.diagnosticData[i].created_at = moment(_this.diagnosticData[i].created_at).subtract(10, 'days').calendar();
-						_this.diagnosticData[i].examination_date = moment(_this.diagnosticData[i].examination_date).subtract(10, 'days').calendar();
-
+						_this.diagnosticData[i].created_at = moment(_this.diagnosticData[i].created_at).format('L');
+						_this.diagnosticData[i].examination_date = moment(_this.diagnosticData[i].examination_date).format('L');
 					}
 					_this.pagination.length = Math.ceil(res.data.count.count / 8);
 				})

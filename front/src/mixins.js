@@ -16,7 +16,6 @@ export default {
     },
 
     created : function(){
-
         this.eventHub.$on('globalLoading', (val) => {
             this.globalLoading = val;
         });
@@ -26,8 +25,8 @@ export default {
     data : function(){
         return {
             cookieKey : 'ohmscookiekey',
-            // apiUrl : 'http://122.53.152.8/ohms/api',
-            apiUrl : 'http://localhost/ohms/api',
+            apiUrl : 'http://122.53.152.8/ohms/api',
+            // apiUrl : 'http://localhost/ohms/api',
             websocket : 'ws://122.53.152.8:3552/',
             token : '',
             eventHub: eventHub,
@@ -51,6 +50,10 @@ export default {
                 textOnly : value => {
                     const pattern = (/^[A-Za-z ]+$/)
                     return pattern.test(value) || 'Please use letters only';  
+                },
+                numberOnly : value => {
+                    const pattern = (/^[0-9]+$/)
+                    return pattern.test(value) || 'Please use numbers only';  
                 },
                 licenseNumber : value => {
                     const pattern = /^[0-9]\d{6}$/g
@@ -116,6 +119,16 @@ export default {
             if(datetime!=null){
                 return moment(datetime).format('MM/DD/YYYY, h:mm:ss A');
             }
+        },
+        ucWords : function(str){
+            str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
+               return letter.toUpperCase();
+            });
+            return str;
+        },
+        numberOnly : function(str){
+            str = str.replace(/^[a-zA-Z ]+$/,"");
+            return str;
         }
     }
 };
